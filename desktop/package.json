@@ -1,0 +1,72 @@
+{
+  "name": "wasl",
+  "productName": "Wasl",
+  "version": "1.0.0",
+  "description": "Wasl — your Android phone and your PC, connected.",
+  "main": "src/main.js",
+  "homepage": "https://github.com/tara44x-code/Wasl",
+  "author": {
+    "name": "Muhannad Sat Link",
+    "email": "tara44x@gmail.com"
+  },
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test test/link.test.js",
+    "fake-phone": "node test/fake-phone.js",
+    "dist:win": "electron-builder --win --publish never",
+    "dist:linux": "electron-builder --linux --publish never"
+  },
+  "dependencies": {
+    "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "electron": "^36.0.0",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "com.muhannadsatlink.wasl",
+    "productName": "Wasl",
+    "copyright": "© 2026 Muhannad Sat Link",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico",
+      "artifactName": "Wasl-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Wasl",
+      "include": "build/installer.nsh"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "icon": "build/icon.png",
+      "category": "Utility",
+      "maintainer": "Muhannad Sat Link <tara44x@gmail.com>",
+      "artifactName": "Wasl-${version}-${arch}.${ext}"
+    }
+  }
+}

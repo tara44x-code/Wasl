@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'">
+  <title>Wasl</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="titlebar">
+    <img src="../assets/icon.png" alt="" class="tb-logo">
+    <span class="tb-name">Wasl <span class="tb-ar">وَصل</span></span>
+  </div>
+
+  <div class="shell">
+    <nav class="sidebar">
+      <button class="nav active" data-page="home"><svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span data-i18n="nav.home"></span></button>
+      <button class="nav" data-page="notifications"><svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span data-i18n="nav.notifications"></span><b class="badge" id="notifBadge" hidden></b></button>
+      <button class="nav" data-page="files"><svg viewBox="0 0 24 24"><path d="M4 20h16a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1h-8l-2-3H4a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1z"/></svg><span data-i18n="nav.files"></span></button>
+      <button class="nav" data-page="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span data-i18n="nav.settings"></span></button>
+      <div class="side-foot">
+        <div class="conn" id="sideConn"><i></i><span></span></div>
+      </div>
+    </nav>
+
+    <main>
+      <!-- HOME -->
+      <section class="page active" id="page-home">
+        <div id="pairView" hidden>
+          <div class="hero card glow">
+            <div class="hero-text">
+              <h1 data-i18n="pair.title"></h1>
+              <p class="muted" data-i18n="pair.lead"></p>
+              <ol class="steps">
+                <li data-i18n="pair.step1"></li>
+                <li data-i18n="pair.step2"></li>
+                <li data-i18n="pair.step3"></li>
+              </ol>
+              <div class="row">
+                <button class="btn primary" id="pairBtn" data-i18n="pair.show"></button>
+                <button class="btn ghost" id="pairCancel" data-i18n="pair.cancel" hidden></button>
+              </div>
+              <p class="muted small" id="pairInfo"></p>
+            </div>
+            <div class="qr-wrap" id="qrWrap">
+              <div class="qr-placeholder"><img src="../assets/icon.png" alt=""></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="deviceView" hidden>
+          <div class="device card glow">
+            <div class="phone-art">
+              <div class="phone-screen">
+                <div class="ring-meter" id="batteryRing"><svg viewBox="0 0 36 36"><circle class="track" cx="18" cy="18" r="15.5"/><circle class="value" cx="18" cy="18" r="15.5"/></svg><b id="batteryText">–</b></div>
+              </div>
+            </div>
+            <div class="device-info">
+              <div class="muted small" data-i18n="home.yourPhone"></div>
+              <h1 id="devName"></h1>
+              <div class="chips">
+                <span class="chip" id="chipConn"></span>
+                <span class="chip" id="chipModel"></span>
+                <span class="chip" id="chipCharge" hidden></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button class="action" id="actFiles"><svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg><b data-i18n="act.files"></b><span data-i18n="act.filesSub"></span></button>
+            <button class="action" id="actClip"><svg viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg><b data-i18n="act.clip"></b><span data-i18n="act.clipSub"></span></button>
+            <button class="action" id="actRing"><svg viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/><path d="M3 8v8M21 8v8"/></svg><b id="ringLabel"></b><span data-i18n="act.ringSub"></span></button>
+            <button class="action" id="actNotifs"><svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/></svg><b data-i18n="act.notifs"></b><span id="notifCount"></span></button>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><h3 data-i18n="home.recent"></h3><button class="link" id="seeAll" data-i18n="home.seeAll"></button></div>
+            <div id="recentList" class="notif-list compact"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- NOTIFICATIONS -->
+      <section class="page" id="page-notifications">
+        <div class="page-head">
+          <h2 data-i18n="nav.notifications"></h2>
+          <div class="row">
+            <input class="search" id="notifSearch" type="search" data-i18n-ph="notif.search">
+            <button class="btn ghost" id="clearAll" data-i18n="notif.clear"></button>
+          </div>
+        </div>
+        <div id="notifList" class="notif-list"></div>
+      </section>
+
+      <!-- FILES -->
+      <section class="page" id="page-files">
+        <div class="page-head">
+          <h2 data-i18n="nav.files"></h2>
+          <div class="row">
+            <button class="btn ghost" id="openFolder" data-i18n="files.openFolder"></button>
+            <button class="btn ghost" id="clearDone" data-i18n="files.clear"></button>
+          </div>
+        </div>
+        <div class="drop card" id="drop">
+          <svg viewBox="0 0 24 24"><path d="M12 15V3M7 8l5-5 5 5"/><path d="M20 15v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4"/></svg>
+          <b data-i18n="files.drop"></b>
+          <span class="muted" data-i18n="files.or"></span>
+          <button class="btn primary" id="pickFiles" data-i18n="files.pick"></button>
+        </div>
+        <div id="transferList" class="transfers"></div>
+      </section>
+
+      <!-- SETTINGS -->
+      <section class="page" id="page-settings">
+        <div class="page-head"><h2 data-i18n="nav.settings"></h2></div>
+        <div class="card settings">
+          <h3 data-i18n="set.appearance"></h3>
+          <div class="set-row"><div><b data-i18n="set.language"></b></div>
+            <div class="seg" data-setting="language"><button data-v="ar">العربية</button><button data-v="en">English</button></div></div>
+          <div class="set-row"><div><b data-i18n="set.theme"></b></div>
+            <div class="seg" data-setting="theme"><button data-v="dark" data-i18n="set.dark"></button><button data-v="light" data-i18n="set.light"></button><button data-v="system" data-i18n="set.system"></button></div></div>
+        </div>
+        <div class="card settings">
+          <h3 data-i18n="set.sync"></h3>
+          <label class="set-row"><div><b data-i18n="set.clipAuto"></b><p class="muted small" data-i18n="set.clipAutoSub"></p></div><input type="checkbox" class="switch" data-setting="clipboardAuto"></label>
+          <label class="set-row"><div><b data-i18n="set.clipPhone"></b><p class="muted small" data-i18n="set.clipPhoneSub"></p></div><input type="checkbox" class="switch" data-setting="clipboardFromPhone"></label>
+          <label class="set-row"><div><b data-i18n="set.toasts"></b><p class="muted small" data-i18n="set.toastsSub"></p></div><input type="checkbox" class="switch" data-setting="desktopNotifications"></label>
+          <label class="set-row"><div><b data-i18n="set.links"></b><p class="muted small" data-i18n="set.linksSub"></p></div><input type="checkbox" class="switch" data-setting="openLinks"></label>
+          <div class="set-row"><div><b data-i18n="set.folder"></b><p class="muted small mono" id="folderPath"></p></div><button class="btn ghost" id="pickDir" data-i18n="set.change"></button></div>
+        </div>
+        <div class="card settings">
+          <h3 data-i18n="set.system2"></h3>
+          <label class="set-row" id="rowStartup"><div><b data-i18n="set.startup"></b></div><input type="checkbox" class="switch" data-setting="startWithSystem"></label>
+          <label class="set-row"><div><b data-i18n="set.tray"></b><p class="muted small" data-i18n="set.traySub"></p></div><input type="checkbox" class="switch" data-setting="minimizeToTray"></label>
+          <div class="set-row" id="rowUnpair"><div><b data-i18n="set.unpair"></b><p class="muted small" id="pairedWith"></p></div><button class="btn danger" id="unpair" data-i18n="set.unpairBtn"></button></div>
+        </div>
+        <div class="card about">
+          <img src="../assets/icon.png" alt="">
+          <div>
+            <h3>Wasl <span class="muted">وَصل</span> <span class="ver" id="ver"></span></h3>
+            <p class="muted" data-i18n="about.lead"></p>
+            <p><span data-i18n="about.dev"></span> <b>Muhannad Sat Link</b></p>
+            <button class="link" id="repoLink">github.com/tara44x-code/Wasl</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+  <script src="i18n.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

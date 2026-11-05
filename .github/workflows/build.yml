@@ -1,0 +1,144 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Protocol tests
+        working-directory: desktop
+        run: node --test test/link.test.js
+
+  windows:
+    needs: test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Set version
+        shell: bash
+        working-directory: desktop
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then npm pkg set version="${GITHUB_REF_NAME#v}"; fi
+      - name: Install
+        working-directory: desktop
+        run: npm install --no-audit --no-fund
+      - name: Build installer
+        working-directory: desktop
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+        run: npx electron-builder --win --publish never
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wasl-windows
+          path: desktop/dist/*.exe
+          if-no-files-found: error
+
+  linux:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Set version
+        working-directory: desktop
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then npm pkg set version="${GITHUB_REF_NAME#v}"; fi
+      - name: Install
+        working-directory: desktop
+        run: npm install --no-audit --no-fund
+      - name: Build AppImage and .deb
+        working-directory: desktop
+        run: npx electron-builder --linux --publish never
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wasl-linux
+          path: |
+            desktop/dist/*.AppImage
+            desktop/dist/*.deb
+          if-no-files-found: error
+
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Signing key
+        env:
+          KEYSTORE_B64: ${{ secrets.WASL_KEYSTORE_B64 }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/wasl.jks"
+            echo "WASL_KEYSTORE_FILE=$RUNNER_TEMP/wasl.jks" >> "$GITHUB_ENV"
+          else
+            echo "::warning::No WASL_KEYSTORE_B64 secret: the APK is signed with a temporary debug key."
+          fi
+      - name: Version
+        run: |
+          echo "WASL_VERSION_CODE=$GITHUB_RUN_NUMBER" >> "$GITHUB_ENV"
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then V="${GITHUB_REF_NAME#v}"; else V="1.0.0"; fi
+          echo "WASL_VERSION_NAME=$V" >> "$GITHUB_ENV"
+          echo "APK_VERSION=$V" >> "$GITHUB_ENV"
+      - name: Build APK
+        working-directory: android
+        env:
+          WASL_KEYSTORE_PASSWORD: ${{ secrets.WASL_KEYSTORE_PASSWORD }}
+          WASL_KEY_ALIAS: ${{ secrets.WASL_KEY_ALIAS }}
+          WASL_KEY_PASSWORD: ${{ secrets.WASL_KEY_PASSWORD }}
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon assembleRelease
+          mkdir -p ../out
+          cp app/build/outputs/apk/release/app-release.apk "../out/Wasl-${APK_VERSION}.apk"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wasl-android
+          path: out/*.apk
+          if-no-files-found: error
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [windows, linux, android]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Checksums
+        run: cd dist && sha256sum * > SHA256SUMS.txt && cat SHA256SUMS.txt
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: Wasl ${{ github.ref_name }}
+          files: dist/*
+          body: |
+            ## تحميل وصل · Download Wasl
+
+            | الجهاز · Device | الملف · File |
+            |---|---|
+            | Windows 10/11 | `Wasl-Setup-*.exe` |
+            | Android 8+ | `Wasl-*.apk` |
+            | Linux | `Wasl-*.AppImage` / `.deb` |
+
+            Developed by **Muhannad Sat Link**.

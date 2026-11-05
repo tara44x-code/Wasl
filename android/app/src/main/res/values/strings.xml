@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Wasl</string>
+    <string name="tagline">Your phone and your PC, connected.</string>
+    <string name="share_label">Send to PC</string>
+    <string name="tile_clip">Send clipboard to PC</string>
+    <string name="developer">Developed by Muhannad Sat Link</string>
+
+    <string name="pair_title">Connect to your PC</string>
+    <string name="pair_lead">Open Wasl on your PC, click “Show pairing code”, then scan it here. Both devices must be on the same Wi-Fi.</string>
+    <string name="pair_scan">Scan QR code</string>
+    <string name="pair_paste">Or paste the pairing link</string>
+    <string name="pair_paste_btn">Pair</string>
+    <string name="pair_invalid">That is not a Wasl pairing code.</string>
+    <string name="pair_confirm_title">Pair with %1$s?</string>
+    <string name="pair_confirm_body">Only pair with a PC you own. It will see your notifications and can send you files.</string>
+    <string name="pair_confirm_ok">Pair</string>
+    <string name="cancel">Cancel</string>
+    <string name="pair_refused">The PC refused the connection. Show a new pairing code on the PC and scan it again.</string>
+    <string name="scan_prompt">Point the camera at the QR code on your PC</string>
+
+    <string name="status_connected">Connected</string>
+    <string name="status_searching">Looking for your PC…</string>
+    <string name="status_off">Paused</string>
+    <string name="status_unpaired">Not paired</string>
+
+    <string name="act_clip">Send clipboard</string>
+    <string name="act_files">Send files</string>
+    <string name="sent">Sent to PC</string>
+    <string name="not_connected">Not connected to your PC</string>
+    <string name="clip_empty">The clipboard is empty</string>
+
+    <string name="section_setup">Set up</string>
+    <string name="perm_listener">Notification access</string>
+    <string name="perm_listener_sub">Lets Wasl show your notifications on the PC.</string>
+    <string name="perm_post">Allow Wasl notifications</string>
+    <string name="perm_post_sub">For files received and Find my phone.</string>
+    <string name="perm_battery">Run in the background</string>
+    <string name="perm_battery_sub">Stops Android from cutting the connection to save battery.</string>
+    <string name="perm_storage">Save received files</string>
+    <string name="perm_storage_sub">Needed on this Android version to save to Downloads.</string>
+    <string name="allow">Allow</string>
+    <string name="done">Done</string>
+
+    <string name="section_settings">Settings</string>
+    <string name="set_notifs">Send notifications to PC</string>
+    <string name="set_clip">Receive clipboard from PC</string>
+    <string name="set_enabled">Stay connected</string>
+    <string name="unpair">Unpair this PC</string>
+    <string name="section_transfers">Transfers</string>
+    <string name="tr_in">From PC</string>
+    <string name="tr_out">To PC</string>
+    <string name="tr_done">Done</string>
+    <string name="tr_failed">Failed</string>
+    <string name="tr_cancelled">Cancelled</string>
+
+    <string name="ch_service">Connection</string>
+    <string name="ch_files">Files</string>
+    <string name="ch_ring">Find my phone</string>
+    <string name="notif_connected">Connected to %1$s</string>
+    <string name="notif_searching">Looking for %1$s…</string>
+    <string name="file_received">File received</string>
+    <string name="ringing">Your PC is looking for this phone</string>
+    <string name="stop">Stop</string>
+    <string name="sending_files">Sending %1$d file(s) to PC…</string>
+</resources>

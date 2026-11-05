@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">وصل</string>
+    <string name="tagline">هاتفك وحاسبتك، متصلان.</string>
+    <string name="share_label">إرسال إلى الحاسبة</string>
+    <string name="tile_clip">إرسال الحافظة للحاسبة</string>
+    <string name="developer">تطوير Muhannad Sat Link</string>
+
+    <string name="pair_title">اربط هاتفك بالحاسبة</string>
+    <string name="pair_lead">افتح وصل على الحاسبة، اضغط «عرض رمز الربط»، ثم امسحه من هنا. يجب أن يكون الجهازان على نفس شبكة الواي فاي.</string>
+    <string name="pair_scan">امسح رمز QR</string>
+    <string name="pair_paste">أو الصق رابط الربط</string>
+    <string name="pair_paste_btn">ربط</string>
+    <string name="pair_invalid">هذا ليس رمز ربط خاص بوصل.</string>
+    <string name="pair_confirm_title">الربط مع %1$s؟</string>
+    <string name="pair_confirm_body">اربط فقط مع حاسبة تملكها. ستتمكن من رؤية إشعاراتك وإرسال ملفات إليك.</string>
+    <string name="pair_confirm_ok">ربط</string>
+    <string name="cancel">إلغاء</string>
+    <string name="pair_refused">رفضت الحاسبة الاتصال. اعرض رمز ربط جديد على الحاسبة وامسحه مرة أخرى.</string>
+    <string name="scan_prompt">وجّه الكاميرا نحو رمز QR على الحاسبة</string>
+
+    <string name="status_connected">متصل</string>
+    <string name="status_searching">جارٍ البحث عن حاسبتك…</string>
+    <string name="status_off">متوقف مؤقتاً</string>
+    <string name="status_unpaired">غير مربوط</string>
+
+    <string name="act_clip">إرسال الحافظة</string>
+    <string name="act_files">إرسال ملفات</string>
+    <string name="sent">تم الإرسال للحاسبة</string>
+    <string name="not_connected">غير متصل بالحاسبة</string>
+    <string name="clip_empty">الحافظة فارغة</string>
+
+    <string name="section_setup">الإعداد</string>
+    <string name="perm_listener">الوصول إلى الإشعارات</string>
+    <string name="perm_listener_sub">ليعرض وصل إشعاراتك على الحاسبة.</string>
+    <string name="perm_post">السماح بإشعارات وصل</string>
+    <string name="perm_post_sub">للملفات المستلمة وميزة البحث عن الهاتف.</string>
+    <string name="perm_battery">العمل في الخلفية</string>
+    <string name="perm_battery_sub">يمنع أندرويد من قطع الاتصال لتوفير البطارية.</string>
+    <string name="perm_storage">حفظ الملفات المستلمة</string>
+    <string name="perm_storage_sub">مطلوب في هذا الإصدار من أندرويد للحفظ في التنزيلات.</string>
+    <string name="allow">سماح</string>
+    <string name="done">تم</string>
+
+    <string name="section_settings">الإعدادات</string>
+    <string name="set_notifs">إرسال الإشعارات إلى الحاسبة</string>
+    <string name="set_clip">استقبال الحافظة من الحاسبة</string>
+    <string name="set_enabled">البقاء متصلاً</string>
+    <string name="unpair">إلغاء ربط الحاسبة</string>
+    <string name="section_transfers">عمليات النقل</string>
+    <string name="tr_in">من الحاسبة</string>
+    <string name="tr_out">إلى الحاسبة</string>
+    <string name="tr_done">اكتمل</string>
+    <string name="tr_failed">فشل</string>
+    <string name="tr_cancelled">أُلغي</string>
+
+    <string name="ch_service">الاتصال</string>
+    <string name="ch_files">الملفات</string>
+    <string name="ch_ring">البحث عن الهاتف</string>
+    <string name="notif_connected">متصل بـ %1$s</string>
+    <string name="notif_searching">جارٍ البحث عن %1$s…</string>
+    <string name="file_received">تم استلام ملف</string>
+    <string name="ringing">حاسبتك تبحث عن هذا الهاتف</string>
+    <string name="stop">إيقاف</string>
+    <string name="sending_files">جارٍ إرسال %1$d ملف إلى الحاسبة…</string>
+</resources>
