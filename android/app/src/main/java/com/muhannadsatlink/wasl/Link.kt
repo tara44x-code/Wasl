@@ -346,6 +346,9 @@ object Link {
                 ?.let { sendBattery(it) }
         }
         if (prefs.sendNotifications) NotifListener.sendSnapshot()
+        PhoneControl.attach(app)
+        Media.attach(app)
+        post(JSONObject().put("t", "hello.phone").put("version", BuildConfig.VERSION_NAME).put("sdk", Build.VERSION.SDK_INT))
     }
 
     private fun onDisconnected() {
@@ -355,6 +358,8 @@ object Link {
         }
         files.abortAll()
         Ringer.stop(app, report = false)
+        PhoneControl.detach(app)
+        Media.detach()
         if (prefs.pairing != null) update { it.copy(status = Status.SEARCHING) }
     }
 
@@ -397,6 +402,20 @@ object Link {
                 update { LinkState(status = Status.UNPAIRED) }
             }
             "file.offer", "file.chunk", "file.end", "file.cancel" -> files.handle(msg, bin)
+            "media.cmd" -> Media.command(msg)
+            "media.request" -> post(Media.snapshot())
+            "toggle", "volume.set" -> PhoneControl.handle(app, msg)
+            "status.request" -> PhoneControl.sendSoon(app)
+            "nav" -> main.post { WaslAccessibility.global(msg.optString("action")) }
+            "call.cmd", "call.dial", "calllog.request", "contacts.request" -> Calls.handle(app, msg)
+            "sms.threads.request", "sms.thread.request", "sms.send" -> Sms.handle(app, msg)
+            "notif.filter" -> {
+                val arr = msg.optJSONArray("muted")
+                val set = HashSet<String>()
+                if (arr != null) for (i in 0 until arr.length()) set.add(arr.optString(i))
+                prefs.mutedApps = set
+                if (prefs.sendNotifications) NotifListener.sendSnapshot()
+            }
         }
     }
 

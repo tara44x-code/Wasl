@@ -24,6 +24,7 @@ class NotifListener : NotificationListenerService() {
 
     override fun onListenerConnected() {
         instance = this
+        if (Link.connected) Media.attach(this)
         if (Link.connected && Link.prefs.sendNotifications) sendSnapshot()
     }
 
@@ -54,6 +55,7 @@ class NotifListener : NotificationListenerService() {
     private fun wanted(sbn: StatusBarNotification): Boolean {
         val n = sbn.notification
         if (sbn.packageName == packageName) return false
+        if (sbn.packageName in Link.prefs.mutedApps) return false
         if (sbn.isOngoing) return false
         if (n.flags and Notification.FLAG_GROUP_SUMMARY != 0) return false
         if (n.flags and Notification.FLAG_FOREGROUND_SERVICE != 0) return false
@@ -149,6 +151,19 @@ class NotifListener : NotificationListenerService() {
         private val lastSent = ConcurrentHashMap<String, String>()
 
         fun sendSnapshot() = main.post { instance?.snapshot() }
+
+        fun isConnected() = instance != null
+
+        /** Do not disturb through the listener, which needs no extra permission. */
+        fun setInterruptionFilter(filter: Int): Boolean {
+            val s = instance ?: return false
+            return try {
+                s.requestInterruptionFilter(filter)
+                true
+            } catch (e: Exception) {
+                false
+            }
+        }
 
         fun dismiss(key: String) = main.post {
             try { instance?.cancelNotification(key) } catch (_: Exception) {}

@@ -105,6 +105,11 @@ function render() {
   renderNotifications();
   renderTransfers();
   renderSettings();
+  renderMessages();
+  renderCalls();
+  renderScreen();
+  renderClipboard();
+  renderUpdate();
 }
 
 function renderPairing() {
@@ -150,10 +155,12 @@ function renderDevice() {
     ring.style.setProperty('--p', 0);
     $('chipCharge').hidden = true;
   }
-  document.querySelectorAll('.action').forEach((a) => (a.disabled = !S.connected && a.id !== 'actNotifs'));
+  document.querySelectorAll('.action').forEach((a) => (a.disabled = !S.connected && a.id !== 'actMirror'));
   $('ringLabel').textContent = tr(S.ringing ? 'act.ringStop' : 'act.ring');
   $('actRing').classList.toggle('ringing', S.ringing);
-  $('notifCount').textContent = tr('act.notifCount', { n: S.notifications.length });
+  $('actMirror').disabled = false;
+  renderMedia();
+  renderControls();
 
   const list = $('recentList');
   const items = S.notifications.slice(0, 4);
@@ -283,7 +290,7 @@ $('pairCancel').onclick = () => wasl.pairCancel();
 $('actFiles').onclick = () => wasl.pickFiles();
 $('actClip').onclick = () => { wasl.sendClipboard(); showToast(tr('notif.sent')); };
 $('actRing').onclick = () => wasl.ring(!S.ringing);
-$('actNotifs').onclick = () => go('notifications');
+$('actMirror').onclick = () => { go('screen'); wasl.mirrorStart(); };
 $('seeAll').onclick = () => go('notifications');
 $('clearAll').onclick = () => wasl.clearNotifications();
 $('notifSearch').oninput = () => renderNotifications();
@@ -329,3 +336,353 @@ setInterval(() => S && (renderPairing(), S.paired && renderDevice()), 30_000);
 wasl.onState((s) => { S = s; render(); });
 wasl.state().then((s) => { S = s; applyLanguage(); render(); });
 applyLanguage();
+
+// ======================================================================
+// Media & quick controls
+// ======================================================================
+
+function fmtTime(ms) {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+
+function mediaPosition(m) {
+  if (!m) return 0;
+  const p = m.playing ? m.position + (Date.now() - m.at) : m.position;
+  return m.duration ? Math.min(p, m.duration) : p;
+}
+
+function renderMedia() {
+  const m = S.connected ? S.media : null;
+  $('mediaEmpty').hidden = !!m;
+  $('mediaBody').hidden = !m;
+  if (!m) return;
+  const art = $('mediaArt');
+  const artKey = m.art ? m.art.slice(-40) : '';
+  if (art.dataset.key !== artKey) {
+    art.dataset.key = artKey;
+    art.replaceChildren(m.art ? el('img', { src: `data:image/jpeg;base64,${m.art}`, alt: '' }) : el('div', { class: 'art-ph', text: '♪' }));
+  }
+  $('mediaApp').textContent = m.app;
+  $('mediaTitle').textContent = m.title;
+  $('mediaArtist').textContent = [m.artist, m.album].filter(Boolean).join(' — ');
+  $('mToggleIcon').innerHTML = m.playing ? '<path d="M7 4h4v16H7zM14 4h4v16h-4z"/>' : '<path d="M7 4l13 8-13 8z"/>';
+  $('mPrev').disabled = !m.canPrev;
+  $('mNext').disabled = !m.canNext;
+  tickMedia();
+}
+
+function tickMedia() {
+  const m = S && S.connected ? S.media : null;
+  if (!m) return;
+  const p = mediaPosition(m);
+  $('mediaBar').style.width = m.duration ? `${(p / m.duration) * 100}%` : '0';
+  $('mediaPos').textContent = fmtTime(p);
+  $('mediaDur').textContent = m.duration ? fmtTime(m.duration) : '';
+}
+setInterval(tickMedia, 1000);
+
+$('mPrev').onclick = () => wasl.media('prev');
+$('mNext').onclick = () => wasl.media('next');
+$('mToggle').onclick = () => wasl.media('toggle');
+$('mediaSeek').onclick = (e) => {
+  const m = S.media;
+  if (!m || !m.canSeek || !m.duration) return;
+  const r = e.currentTarget.getBoundingClientRect();
+  let f = (e.clientX - r.left) / r.width;
+  if (document.documentElement.dir === 'rtl') f = 1 - f;
+  wasl.media('seek', Math.round(f * m.duration));
+};
+
+function renderControls() {
+  const st = S.connected ? S.status : null;
+  const tiles = ['tDnd', 'tTorch', 'tRinger', 'tLock'];
+  tiles.forEach((id) => ($(id).disabled = !st));
+  $('volMusic').disabled = !st;
+  $('volRing').disabled = !st;
+  const ringer = st ? st.ringer : 'normal';
+  $('ringerLabel').textContent = tr(`ctl.${ringer}`);
+  if (!st) return;
+  $('tDnd').classList.toggle('on', !!st.dnd);
+  $('tTorch').classList.toggle('on', !!st.torch);
+  $('tTorch').disabled = !st.hasTorch;
+  $('tRinger').classList.toggle('on', ringer !== 'normal');
+  $('tLock').disabled = !st.canLock;
+  $('tLock').title = st.canLock ? '' : tr('perm.a11y');
+  const vm = $('volMusic');
+  const vr = $('volRing');
+  if (document.activeElement !== vm) { vm.max = st.volMusicMax; vm.value = st.volMusic; }
+  if (document.activeElement !== vr) { vr.max = st.volRingMax; vr.value = st.volRing; }
+}
+
+$('tDnd').onclick = () => wasl.toggle('dnd', !(S.status && S.status.dnd));
+$('tTorch').onclick = () => wasl.toggle('torch', !(S.status && S.status.torch));
+$('tRinger').onclick = () => {
+  const order = ['normal', 'vibrate', 'silent'];
+  const cur = (S.status && S.status.ringer) || 'normal';
+  wasl.toggle('ringer', order[(order.indexOf(cur) + 1) % order.length]);
+};
+$('tLock').onclick = () => wasl.toggle('lock', true);
+let volTimer = null;
+const volChange = (stream, input) => {
+  clearTimeout(volTimer);
+  volTimer = setTimeout(() => wasl.volume(stream, Number(input.value)), 80);
+};
+$('volMusic').oninput = (e) => volChange('music', e.target);
+$('volRing').oninput = (e) => volChange('ring', e.target);
+
+// ======================================================================
+// Messages
+// ======================================================================
+
+let composingNew = false;
+let smsRequested = false;
+
+function contactOptions() {
+  const dl = $('contactList');
+  const c = S.contacts || [];
+  if (dl.dataset.n === String(c.length)) return;
+  dl.dataset.n = String(c.length);
+  dl.replaceChildren(...c.flatMap((x) => x.numbers.map((n) => el('option', { value: n, label: x.name }))));
+}
+
+function resolveNumber(text) {
+  const t = String(text).trim();
+  if (/^[+\d][\d\s-]*$/.test(t)) return t.replace(/[\s-]/g, '');
+  const c = (S.contacts || []).find((x) => x.name.toLowerCase() === t.toLowerCase());
+  return c ? c.numbers[0] : t;
+}
+
+function renderMessages() {
+  const page = $('page-messages');
+  if (!page.classList.contains('active')) return;
+  if (S.connected && !smsRequested) {
+    smsRequested = true;
+    wasl.smsThreads();
+    wasl.contacts();
+  }
+  contactOptions();
+  const th = S.smsThreads;
+  $('smsPerm').hidden = !(th && !th.allowed);
+  const q = $('smsSearch').value.trim().toLowerCase();
+  const list = $('threadList');
+  const items = (th ? th.items : []).filter((x) => !q || `${x.name} ${x.address} ${x.snippet}`.toLowerCase().includes(q));
+  const cur = S.smsThread;
+  list.replaceChildren(...(items.length ? items.map((x) => el('button', {
+    class: `thread ${cur && cur.thread === x.thread ? 'sel' : ''} ${x.unread ? 'unread' : ''}`,
+    onclick: () => { composingNew = false; wasl.smsOpen(x.thread); },
+  },
+  el('div', { class: 'app-icon letter', text: (x.name || x.address || '#').trim().charAt(0).toUpperCase() }),
+  el('div', { class: 't-main' },
+    el('div', { class: 'th-top' }, el('b', { dir: 'auto', text: x.name || x.address }), el('span', { class: 'muted small', text: ago(x.date) })),
+    el('div', { class: 'muted small ellipsis', dir: 'auto', text: (x.out ? '↪ ' : '') + x.snippet })),
+  x.unread ? el('b', { class: 'badge', text: String(x.unread) }) : null)) : [el('div', { class: 'empty small' }, el('span', { class: 'muted', text: th ? tr('notif.empty') : tr('sms.loading') }))]));
+
+  const head = $('convoHead');
+  const bubbles = $('bubbles');
+  $('smsTo').hidden = !composingNew;
+  if (composingNew) {
+    head.replaceChildren(el('b', { text: tr('sms.newTitle') }));
+    bubbles.replaceChildren();
+  } else if (cur) {
+    head.replaceChildren(el('b', { dir: 'auto', text: cur.name || cur.address || '' }), el('span', { class: 'muted small mono', text: cur.name ? cur.address : '' }),
+      el('button', { class: 'pill', text: tr('calls.call'), onclick: () => wasl.dial(cur.address) }));
+    const atBottom = bubbles.scrollHeight - bubbles.scrollTop - bubbles.clientHeight < 40;
+    bubbles.replaceChildren(...(cur.items || []).map((m) => el('div', { class: `bubble ${m.out ? 'out' : 'in'} ${m.pending ? 'pending' : ''}` },
+      el('div', { dir: 'auto', text: m.body }), el('span', { class: 'b-time', text: new Date(m.date).toLocaleString(lang === 'ar' ? 'ar-IQ' : undefined, { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' }) }))));
+    if (atBottom || bubbles.dataset.thread !== String(cur.thread)) bubbles.scrollTop = bubbles.scrollHeight;
+    bubbles.dataset.thread = String(cur.thread);
+  } else {
+    head.replaceChildren();
+    bubbles.replaceChildren(el('div', { class: 'empty' }, el('span', { class: 'muted', text: tr('sms.pick') })));
+  }
+  $('smsBody').disabled = !S.connected || (!cur && !composingNew);
+  $('smsSendBtn').disabled = $('smsBody').disabled;
+  const unread = (th ? th.items : []).reduce((a, x) => a + (x.unread || 0), 0);
+  $('smsBadge').hidden = !unread;
+  $('smsBadge').textContent = String(unread);
+}
+
+function sendSms() {
+  const body = $('smsBody').value.trim();
+  if (!body) return;
+  const to = composingNew ? resolveNumber($('smsTo').value) : S.smsThread && S.smsThread.address;
+  if (!to) return;
+  wasl.smsSend(to, body).then((ok) => showToast(tr(ok ? 'notif.sent' : 'notif.failed')));
+  $('smsBody').value = '';
+  if (composingNew) {
+    composingNew = false;
+    setTimeout(() => wasl.smsThreads(), 1500);
+  }
+}
+$('smsSendBtn').onclick = sendSms;
+$('smsBody').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendSms(); }
+});
+$('smsNew').onclick = () => { composingNew = true; wasl.smsClose(); wasl.contacts(); render(); setTimeout(() => $('smsTo').focus(), 0); };
+$('smsRefresh').onclick = () => { wasl.smsThreads(); if (S.smsThread) wasl.smsOpen(S.smsThread.thread); };
+$('smsSearch').oninput = () => renderMessages();
+
+// ======================================================================
+// Calls
+// ======================================================================
+
+let callsRequested = false;
+
+function renderCalls() {
+  const c = S.connected ? S.call : null;
+  $('activeCall').hidden = !c;
+  if (c) {
+    $('acLabel').textContent = tr(c.state === 'ringing' ? 'calls.incoming' : 'calls.ongoing');
+    $('acName').textContent = c.name || c.number || tr('calls.unknown');
+    $('acAnswer').hidden = c.state !== 'ringing';
+  }
+  if (!$('page-calls').classList.contains('active')) return;
+  if (S.connected && !callsRequested) {
+    callsRequested = true;
+    wasl.callLog();
+    wasl.contacts();
+  }
+  contactOptions();
+  const log = S.calllog;
+  $('callsPerm').hidden = !(log && !log.allowed);
+  const items = log ? log.items : [];
+  $('callLog').replaceChildren(...(items.length ? items.map((x) => el('div', { class: `call-row ${x.type}` },
+    el('div', { class: `call-ico ${x.type}`, text: { in: '↙', out: '↗', missed: '✕', rejected: '⊘' }[x.type] || '•' }),
+    el('div', { class: 't-main' },
+      el('b', { dir: 'auto', text: x.name || x.number || tr('calls.unknown') }),
+      el('span', { class: 'muted small', text: `${tr(`calls.${x.type}`)} · ${ago(x.date)}${x.duration ? ` · ${fmtTime(x.duration * 1000)}` : ''}` })),
+    x.number ? el('div', { class: 'row' },
+      el('button', { class: 'pill', text: tr('calls.call'), onclick: () => wasl.dial(x.number) }),
+      el('button', { class: 'pill', text: tr('calls.sms'), onclick: () => startSmsTo(x.number) })) : null))
+    : [el('div', { class: 'empty small' }, el('span', { class: 'muted', text: tr('calls.empty') }))]));
+}
+
+function startSmsTo(number) {
+  const th = (S.smsThreads ? S.smsThreads.items : []).find((x) => x.address.replace(/\D/g, '').endsWith(number.replace(/\D/g, '').slice(-9)));
+  go('messages');
+  if (th) {
+    composingNew = false;
+    wasl.smsOpen(th.thread);
+  } else {
+    composingNew = true;
+    $('smsTo').value = number;
+    wasl.smsClose();
+  }
+  render();
+}
+
+$('dialBtn').onclick = () => {
+  const n = resolveNumber($('dialNumber').value);
+  if (n) { wasl.dial(n); showToast(tr('notif.sent')); }
+};
+$('dialSms').onclick = () => { const n = resolveNumber($('dialNumber').value); if (n) startSmsTo(n); };
+$('acAnswer').onclick = () => wasl.callCmd('answer');
+$('acEnd').onclick = () => wasl.callCmd(S.call && S.call.state === 'ringing' ? 'decline' : 'end');
+$('callsRefresh').onclick = () => wasl.callLog();
+
+// ======================================================================
+// Screen mirroring
+// ======================================================================
+
+function renderScreen() {
+  const m = S.mirror || { devices: [] };
+  $('liveBadge').hidden = !m.active;
+  $('mirrorStart').hidden = !!m.active;
+  $('mirrorStop').hidden = !m.active;
+  $('mirrorStart').disabled = m.status === 'starting';
+  let status = '';
+  if (m.status === 'starting') status = tr('mirror.s.starting');
+  else if (m.status === 'running' && m.active) status = tr('mirror.s.running');
+  else if (m.status === 'error') status = STRINGS.en[`mirror.e.${m.error}`] !== undefined ? tr(`mirror.e.${m.error}`) : tr('mirror.e.other') + m.error;
+  $('mirrorStatus').textContent = status;
+  $('mirrorStatus').className = `small ${m.status === 'error' ? 'err' : 'muted'}`;
+  const list = $('adbDevices');
+  list.replaceChildren(...(m.devices.length ? m.devices.map((d) => el('div', { class: 'device-row' },
+    el('div', { class: `t-dir ${d.transport === 'usb' ? 'in' : 'out'}`, text: d.transport === 'usb' ? '⌁' : '≋' }),
+    el('div', { class: 't-main' },
+      el('b', { text: d.model || d.serial }),
+      el('span', { class: 'muted small', text: d.state === 'unauthorized' ? tr('mirror.unauthorized') : `${tr(d.transport === 'usb' ? 'mirror.usb' : 'mirror.wifi')} · ${d.serial}` })),
+    el('div', { class: 'row' },
+      d.transport === 'usb' && d.state === 'device' ? el('button', { class: 'btn ghost sm', text: tr('mirror.toWifi'), onclick: () => wasl.mirrorWifi(d.serial).then((r) => showToast(r.ok ? `✓ ${r.result}` : r.error)) }) : null,
+      d.state === 'device' ? el('button', { class: 'btn primary sm', text: tr('mirror.start'), onclick: () => wasl.mirrorStart(d.serial) }) : null)))
+    : [el('div', { class: 'empty small' }, el('span', { class: 'muted', text: tr('mirror.noDevices') }))]));
+}
+
+$('mirrorStart').onclick = () => wasl.mirrorStart();
+$('mirrorStop').onclick = () => wasl.mirrorStop();
+$('mirrorRefresh').onclick = () => wasl.mirrorRefresh();
+$('pairDo').onclick = async () => {
+  const host = $('pairHost').value.trim();
+  const code = $('pairCode').value.trim();
+  if (!host || !code) return;
+  $('pairResult').textContent = '…';
+  const r = await wasl.mirrorPair(host, code);
+  $('pairResult').textContent = r.ok ? tr('mirror.paired') : r.error;
+  $('pairResult').className = `small ${r.ok ? 'ok' : 'err'}`;
+};
+
+// ======================================================================
+// Clipboard history
+// ======================================================================
+
+function renderClipboard() {
+  const h = S.clipHistory || [];
+  $('clipList').replaceChildren(...(h.length ? h.map((x, i) => el('div', { class: `clip ${x.pinned ? 'pinned' : ''}` },
+    el('div', { class: 'clip-text', dir: 'auto', text: x.text.length > 600 ? `${x.text.slice(0, 600)}…` : x.text }),
+    el('div', { class: 'clip-foot' },
+      el('span', { class: 'muted small', text: `${tr(x.from === 'phone' ? 'clip.phone' : 'clip.pc')} · ${ago(x.time)}` }),
+      el('div', { class: 'row' },
+        el('button', { class: 'pill', text: tr('clip.copy'), onclick: () => { wasl.clipCopy(i); showToast(tr('notif.copied')); } }),
+        el('button', { class: 'pill', text: tr(x.pinned ? 'clip.unpin' : 'clip.pin'), onclick: () => wasl.clipPin(i) }),
+        el('button', { class: 'pill', text: '×', title: tr('clip.delete'), onclick: () => wasl.clipDelete(i) })))))
+    : [el('div', { class: 'empty' }, el('span', { class: 'muted', text: tr('clip.empty') }))]));
+}
+$('clipClear').onclick = () => wasl.clipClear();
+
+// ======================================================================
+// Settings extras & updates
+// ======================================================================
+
+const baseRenderSettings = renderSettings;
+// eslint-disable-next-line no-func-assign
+renderSettings = function renderSettingsAll() {
+  baseRenderSettings();
+  const muted = new Set(S.settings.mutedApps || []);
+  const apps = Object.entries(S.seenApps || {}).sort((a, b) => a[1].localeCompare(b[1]));
+  $('appFilter').replaceChildren(...(apps.length ? apps.map(([pkg, name]) => el('label', { class: 'app-toggle' },
+    el('span', { text: name }),
+    (() => {
+      const i = el('input', { type: 'checkbox', class: 'switch' });
+      i.checked = !muted.has(pkg);
+      i.onchange = () => wasl.mute(pkg, !i.checked);
+      return i;
+    })())) : [el('span', { class: 'muted small', text: tr('set.noApps') })]));
+  document.querySelectorAll('input.time').forEach((i) => {
+    if (document.activeElement !== i) i.value = S.settings[i.dataset.time] || '';
+  });
+  $('phoneVer').textContent = S.phoneVersion ? tr('upd.phone', { v: S.phoneVersion }) : '';
+};
+document.querySelectorAll('input.time').forEach((i) => {
+  i.addEventListener('change', () => wasl.setSettings({ [i.dataset.time]: i.value }));
+});
+
+function renderUpdate() {
+  const u = S.update || { status: 'idle' };
+  const vars = { v: S.version, n: u.version || '', p: u.percent || 0 };
+  $('updateText').textContent = tr(`upd.${u.status}`, vars);
+  $('updInstall').hidden = u.status !== 'available';
+  $('updBanner').hidden = u.status !== 'available' && u.status !== 'downloading';
+  $('updBannerText').textContent = u.status === 'downloading' ? tr('upd.downloading', vars) : tr('upd.banner', vars);
+  $('updBannerBtn').hidden = u.status !== 'available';
+}
+$('updCheck').onclick = () => wasl.updateCheck();
+$('updInstall').onclick = () => wasl.updateInstall();
+$('updBannerBtn').onclick = () => wasl.updateInstall();
+
+// Pages that load data when opened.
+document.querySelectorAll('.nav').forEach((b) => b.addEventListener('click', () => {
+  if (b.dataset.page === 'messages') { smsRequested = false; }
+  if (b.dataset.page === 'calls') { callsRequested = false; }
+  render();
+}));

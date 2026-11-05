@@ -63,4 +63,17 @@
     <string name="ringing">Your PC is looking for this phone</string>
     <string name="stop">Stop</string>
     <string name="sending_files">Sending %1$d file(s) to PC…</string>
+    <string name="perm_calls">Calls</string>
+    <string name="perm_calls_sub">See who is calling, answer and call from the PC.</string>
+    <string name="perm_sms">Messages</string>
+    <string name="perm_sms_sub">Read and send text messages from the PC.</string>
+    <string name="perm_a11y">Control from the PC</string>
+    <string name="perm_a11y_sub">Lock the screen and use the phone from the PC. Find “Wasl” in Accessibility and turn it on.</string>
+    <string name="a11y_label">Wasl remote control</string>
+    <string name="a11y_description">Lets Wasl on your PC lock the screen and tap, swipe and press Back or Home on this phone when you mirror it. Wasl does not read what is on the screen.</string>
+    <string name="update_title">Wasl %1$s is available</string>
+    <string name="update_sub">The update is downloaded from GitHub and checked before it is installed.</string>
+    <string name="update_now">Update now</string>
+    <string name="update_downloading">Downloading update…</string>
+    <string name="update_failed">The update could not be installed. Try again later or download it from GitHub.</string>
 </resources>

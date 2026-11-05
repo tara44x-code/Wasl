@@ -101,6 +101,14 @@ class Prefs(context: Context) {
         get() = sp.getBoolean("clipboardFromPc", true)
         set(v) = sp.edit().putBoolean("clipboardFromPc", v).apply()
 
+    var mutedApps: Set<String>
+        get() = sp.getStringSet("mutedApps", emptySet()) ?: emptySet()
+        set(v) = sp.edit().putStringSet("mutedApps", HashSet(v)).apply()
+
+    var lastUpdateCheck: Long
+        get() = sp.getLong("lastUpdateCheck", 0)
+        set(v) = sp.edit().putLong("lastUpdateCheck", v).apply()
+
     var enabled: Boolean
         get() = sp.getBoolean("enabled", true)
         set(v) = sp.edit().putBoolean("enabled", v).apply()

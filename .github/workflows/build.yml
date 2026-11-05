@@ -38,6 +38,10 @@ jobs:
       - name: Install
         working-directory: desktop
         run: npm install --no-audit --no-fund
+      - name: Fetch ADB and scrcpy-server
+        shell: bash
+        working-directory: desktop
+        run: ./fetch-vendor.sh win
       - name: Build installer
         working-directory: desktop
         env:
@@ -64,6 +68,9 @@ jobs:
       - name: Install
         working-directory: desktop
         run: npm install --no-audit --no-fund
+      - name: Fetch ADB and scrcpy-server
+        working-directory: desktop
+        run: ./fetch-vendor.sh linux
       - name: Build AppImage and .deb
         working-directory: desktop
         run: npx electron-builder --linux --publish never

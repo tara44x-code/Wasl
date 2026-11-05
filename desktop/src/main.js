@@ -3,7 +3,7 @@
 
 const {
   app, BrowserWindow, Tray, Menu, ipcMain, clipboard, Notification,
-  nativeImage, shell, dialog, safeStorage, nativeTheme,
+  nativeImage, shell, dialog, safeStorage, nativeTheme, globalShortcut,
 } = require('electron');
 const path = require('path');
 const os = require('os');
@@ -13,6 +13,9 @@ const { LinkServer } = require('./server');
 const { Transfers } = require('./files');
 const { Store } = require('./store');
 const P = require('./protocol');
+const { Phone } = require('./phone');
+const { Updater } = require('./updater');
+const { Mirror } = require('./mirror');
 
 const APP_ID = 'com.muhannadsatlink.wasl';
 const ICON = path.join(__dirname, 'assets', 'icon.png');
@@ -29,6 +32,9 @@ let tray = null;
 let store = null;
 let server = null;
 let transfers = null;
+let phone = null;
+let mirror = null;
+const updater = new Updater();
 let quitting = false;
 
 const state = {
@@ -39,6 +45,7 @@ const state = {
   notifications: [], // newest first
   transfers: [],
   pairing: null, // { uri, qr, until, hosts }
+  update: { status: 'idle' },
 };
 
 // ---- helpers -------------------------------------------------------------
@@ -110,6 +117,11 @@ async function startServer() {
     keyFor: (id) => store.keyFor(id),
   });
   server.on('log', (m) => console.log('[link]', m));
+  phone = new Phone({
+    state, store, server, push, toast, t, showWindow,
+    dataDir: app.getPath('userData'),
+    icon: ICON,
+  });
   server.on('paired', (dev) => {
     store.setDevice(dev);
     state.pairing = null;
@@ -121,6 +133,7 @@ async function startServer() {
     state.connected = true;
     state.remote = remote;
     server.send({ t: 'notif.request' }).catch(() => {});
+    phone.onConnected();
     updateTray();
     push();
   });
@@ -128,6 +141,7 @@ async function startServer() {
     state.connected = false;
     state.ringing = false;
     transfers.abortAll();
+    phone.onDisconnected();
     updateTray();
     push();
   });
@@ -186,6 +200,7 @@ let lastClipFromPhone = null;
 
 function onMessage(msg, bin) {
   if (transfers.handle(msg, bin)) return;
+  if (phone.handle(msg)) return;
   switch (msg.t) {
     case 'battery':
       state.battery = { level: Number(msg.level), charging: !!msg.charging };
@@ -194,13 +209,15 @@ function onMessage(msg, bin) {
     case 'notif.snapshot':
       state.notifications = (Array.isArray(msg.items) ? msg.items : []).map(sanitizeNotif)
         .sort((a, b) => b.time - a.time).slice(0, MAX_NOTIFS);
+      state.notifications.forEach((n) => phone.noteApp(n));
       push();
       break;
     case 'notif.posted': {
       const n = sanitizeNotif(msg);
       const existed = state.notifications.some((x) => x.key === n.key);
+      phone.noteApp(n);
       state.notifications = [n, ...state.notifications.filter((x) => x.key !== n.key)].slice(0, MAX_NOTIFS);
-      if (!existed && !msg.silent && store.settings.desktopNotifications) {
+      if (!existed && !msg.silent && store.settings.desktopNotifications && !phone.inQuietHours()) {
         const head = n.title ? `${n.app} · ${n.title}` : n.app;
         toast(head, n.text, iconFrom(n.icon));
       }
@@ -216,6 +233,7 @@ function onMessage(msg, bin) {
         lastClipFromPhone = msg.text;
         lastClip = msg.text;
         clipboard.writeText(msg.text);
+        phone.remember(msg.text, 'phone');
         if (msg.manual && store.settings.desktopNotifications) {
           toast(t('تم النسخ من الهاتف', 'Copied from phone'), msg.text.slice(0, 120));
         }
@@ -264,6 +282,7 @@ function watchClipboard() {
     if (text === lastClip) return;
     lastClip = text;
     if (!text || text === lastClipFromPhone) return;
+    phone.remember(text, 'pc');
     if (store.settings.clipboardAuto && server && server.connected && text.length < 1_000_000) {
       server.send({ t: 'clip', text }).catch(() => {});
     }
@@ -385,9 +404,39 @@ function applyLoginItem() {
   app.setLoginItemSettings({ openAtLogin: store.settings.startWithSystem, args: ['--hidden'] });
 }
 
+function applyShortcuts() {
+  globalShortcut.unregisterAll();
+  if (!store.settings.shortcuts) return;
+  try {
+    globalShortcut.register('CommandOrControl+Shift+V', () => server.connected && sendClipboard());
+    globalShortcut.register('CommandOrControl+Shift+W', () => {
+      if (win && win.isVisible() && win.isFocused()) win.hide();
+      else showWindow();
+    });
+    globalShortcut.register('CommandOrControl+Shift+M', () => mirror && mirror.toggle());
+  } catch {}
+}
+
+function startUpdater() {
+  updater.on('state', (s) => {
+    state.update = s;
+    push();
+    if (s.status === 'available' && store.settings.desktopNotifications) {
+      toast(t('تحديث جديد متوفر', 'Update available'), `Wasl ${s.version}`);
+    }
+  });
+  const run = () => store.settings.autoUpdate && app.isPackaged && updater.check();
+  setTimeout(run, 15_000);
+  setInterval(run, 6 * 3600_000);
+}
+
 // ---- IPC -----------------------------------------------------------------
 
 function registerIpc() {
+  phone.registerIpc();
+  mirror.registerIpc();
+  ipcMain.handle('update.check', () => updater.check());
+  ipcMain.handle('update.install', () => updater.install());
   ipcMain.handle('state', () => publicState());
   ipcMain.handle('pair.start', () => startPairing());
   ipcMain.handle('pair.cancel', () => {
@@ -446,6 +495,7 @@ function registerIpc() {
   ipcMain.handle('settings.set', (_e, patch) => {
     const s = store.setSettings(patch || {});
     if ('startWithSystem' in patch) applyLoginItem();
+    if ('shortcuts' in patch) applyShortcuts();
     if ('theme' in patch || 'language' in patch) {
       if (win && process.platform === 'win32') win.setTitleBarOverlay(overlayColors());
       updateTray();
@@ -468,7 +518,9 @@ function registerIpc() {
 app.on('second-instance', showWindow);
 app.on('before-quit', () => {
   quitting = true;
+  if (mirror) mirror.stopAll();
 });
+app.on('will-quit', () => globalShortcut.unregisterAll());
 app.on('window-all-closed', () => {
   if (!store.settings.minimizeToTray) app.quit();
 });
@@ -476,12 +528,15 @@ app.on('window-all-closed', () => {
 app.whenReady().then(async () => {
   store = new Store(app.getPath('userData'), safeStorage);
   Menu.setApplicationMenu(null);
-  registerIpc();
   await startServer();
+  mirror = new Mirror({ state, store, push, t, icon: ICON, dataDir: app.getPath('userData'), resources: process.resourcesPath, isPackaged: app.isPackaged, link: server });
+  registerIpc();
   createWindow();
   createTray();
   watchClipboard();
   applyLoginItem();
+  applyShortcuts();
+  startUpdater();
   nativeTheme.on('updated', () => {
     if (win && process.platform === 'win32') win.setTitleBarOverlay(overlayColors());
     push();

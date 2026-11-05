@@ -63,4 +63,17 @@
     <string name="ringing">حاسبتك تبحث عن هذا الهاتف</string>
     <string name="stop">إيقاف</string>
     <string name="sending_files">جارٍ إرسال %1$d ملف إلى الحاسبة…</string>
+    <string name="perm_calls">المكالمات</string>
+    <string name="perm_calls_sub">لمعرفة من يتصل، والرد والاتصال من الحاسبة.</string>
+    <string name="perm_sms">الرسائل</string>
+    <string name="perm_sms_sub">لقراءة الرسائل النصية وإرسالها من الحاسبة.</string>
+    <string name="perm_a11y">التحكم من الحاسبة</string>
+    <string name="perm_a11y_sub">لقفل الشاشة واستخدام الهاتف من الحاسبة. ابحث عن «وصل» في إمكانية الوصول وفعّله.</string>
+    <string name="a11y_label">التحكم عن بعد - وصل</string>
+    <string name="a11y_description">يسمح لوصل على حاسبتك بقفل الشاشة والنقر والسحب وزر الرجوع والرئيسية عند عرض الشاشة. وصل لا يقرأ محتوى الشاشة.</string>
+    <string name="update_title">تحديث وصل %1$s متوفر</string>
+    <string name="update_sub">يُنزّل التحديث من GitHub ويُتحقق منه قبل التثبيت.</string>
+    <string name="update_now">حدّث الآن</string>
+    <string name="update_downloading">جارٍ تنزيل التحديث…</string>
+    <string name="update_failed">تعذّر تثبيت التحديث. حاول لاحقاً أو نزّله من GitHub.</string>
 </resources>

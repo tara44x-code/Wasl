@@ -18,6 +18,15 @@ const DEFAULTS = {
   minimizeToTray: true,
   startWithSystem: false,
   downloadDir: '',
+  clipHistory: true,
+  shortcuts: true,
+  quietEnabled: false,
+  quietFrom: '23:00',
+  quietTo: '07:00',
+  mutedApps: [],
+  autoUpdate: true,
+  mirrorQuality: 'balanced',
+  mirrorAudio: true,
 };
 
 class Store {
@@ -50,7 +59,10 @@ class Store {
 
   setSettings(patch) {
     for (const k of Object.keys(patch)) {
-      if (k in DEFAULTS && typeof patch[k] === typeof DEFAULTS[k]) this.data.settings[k] = patch[k];
+      if (!(k in DEFAULTS)) continue;
+      if (Array.isArray(DEFAULTS[k]) ? Array.isArray(patch[k]) : typeof patch[k] === typeof DEFAULTS[k]) {
+        this.data.settings[k] = patch[k];
+      }
     }
     this.save();
     return this.data.settings;

@@ -100,10 +100,12 @@ class ActionReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         when (intent.action) {
             STOP_RING -> Ringer.stop(context)
+            INSTALL_STATUS -> Updater.onStatus(context, intent)
         }
     }
 
     companion object {
         const val STOP_RING = "com.muhannadsatlink.wasl.STOP_RING"
+        const val INSTALL_STATUS = "com.muhannadsatlink.wasl.INSTALL_STATUS"
     }
 }

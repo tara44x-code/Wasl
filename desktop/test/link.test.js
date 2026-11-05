@@ -137,3 +137,73 @@ test('pairing uri round trip', () => {
   assert.equal(u.searchParams.get('n'), 'مهند PC');
   assert.ok(P.fromB64url(u.searchParams.get('k')).equals(key));
 });
+
+test('mirror control messages match scrcpy 3.3.4 sizes', () => {
+  const Module = require('module');
+  const orig = Module._load;
+  Module._load = function (req, ...rest) {
+    if (req === 'electron') return { ipcMain: { handle() {}, on() {} }, BrowserWindow: class {}, app: {}, screen: {}, clipboard: {} };
+    return orig.call(this, req, ...rest);
+  };
+  const { C, SocketReader } = require('../src/mirror');
+  Module._load = orig;
+  assert.equal(C.touch(0, -2, 10, 20, 1080, 2400, 1, 0, 0).length, 32);
+  assert.equal(C.scroll(1, 2, 3, 4, 1, -1).length, 21);
+  assert.equal(C.key(0, 66).length, 14);
+  assert.equal(C.setClipboard('hi', true).length, 16);
+  const t = C.touch(2, -2, 5, 6, 100, 200, 1, 0, 0);
+  assert.equal(t[0], 2);
+  assert.equal(t.readBigInt64BE(2), -2n);
+  assert.equal(t.readUInt16BE(22), 0xffff);
+  assert.ok(SocketReader);
+});
+
+test('socket reader splits a stream into exact reads', async () => {
+  const { EventEmitter } = require('events');
+  const Module = require('module');
+  const orig = Module._load;
+  Module._load = function (req, ...rest) {
+    if (req === 'electron') return { ipcMain: { handle() {}, on() {} }, BrowserWindow: class {}, app: {}, screen: {}, clipboard: {} };
+    return orig.call(this, req, ...rest);
+  };
+  const { SocketReader } = require('../src/mirror');
+  Module._load = orig;
+  const sock = new EventEmitter();
+  const r = new SocketReader(sock);
+  const a = r.read(3);
+  const b = r.read(5);
+  sock.emit('data', Buffer.from([1, 2]));
+  sock.emit('data', Buffer.from([3, 4, 5, 6, 7, 8, 9]));
+  assert.deepEqual([...(await a)], [1, 2, 3]);
+  assert.deepEqual([...(await b)], [4, 5, 6, 7, 8]);
+  const c = r.read(4);
+  sock.emit('end');
+  await assert.rejects(c);
+});
+
+test('main-process modules load', () => {
+  const Module = require('module');
+  const orig = Module._load;
+  const fake = new Proxy({}, { get: (t, k) => (k === 'app' ? { getVersion: () => '1.0.0', getPath: () => '/tmp' } : k === 'ipcMain' ? { handle() {}, on() {} } : class {}) });
+  Module._load = function (req, ...rest) {
+    if (req === 'electron') return fake;
+    return orig.call(this, req, ...rest);
+  };
+  try {
+    const { Phone } = require('../src/phone');
+    const { Updater, newer } = require('../src/updater');
+    assert.ok(Phone && Updater);
+    assert.equal(newer('1.2.0', '1.1.9'), true);
+    assert.equal(newer('v1.1.0', '1.1.0'), false);
+    const st = { notifications: [] };
+    const store = { settings: { quietEnabled: true, quietFrom: '00:00', quietTo: '23:59', clipHistory: true } };
+    const p = new Phone({ state: st, store, server: { send: () => Promise.resolve() }, push() {}, toast() {}, t: (a) => a, showWindow() {}, dataDir: require('os').tmpdir() });
+    assert.equal(typeof p.inQuietHours(), 'boolean');
+    p.remember('hello', 'pc');
+    p.remember('123456', 'pc');
+    assert.equal(st.clipHistory[0].text, 'hello');
+    assert.ok(!st.clipHistory.some((x) => x.text === '123456'));
+  } finally {
+    Module._load = orig;
+  }
+});

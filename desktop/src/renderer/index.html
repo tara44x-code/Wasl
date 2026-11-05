@@ -16,7 +16,11 @@
     <nav class="sidebar">
       <button class="nav active" data-page="home"><svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span data-i18n="nav.home"></span></button>
       <button class="nav" data-page="notifications"><svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span data-i18n="nav.notifications"></span><b class="badge" id="notifBadge" hidden></b></button>
+      <button class="nav" data-page="messages"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span data-i18n="nav.messages"></span><b class="badge" id="smsBadge" hidden></b></button>
+      <button class="nav" data-page="calls"><svg viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg><span data-i18n="nav.calls"></span></button>
+      <button class="nav" data-page="screen"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg><span data-i18n="nav.screen"></span><b class="badge live" id="liveBadge" hidden>●</b></button>
       <button class="nav" data-page="files"><svg viewBox="0 0 24 24"><path d="M4 20h16a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1h-8l-2-3H4a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1z"/></svg><span data-i18n="nav.files"></span></button>
+      <button class="nav" data-page="clipboard"><svg viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg><span data-i18n="nav.clipboard"></span></button>
       <button class="nav" data-page="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span data-i18n="nav.settings"></span></button>
       <div class="side-foot">
         <div class="conn" id="sideConn"><i></i><span></span></div>
@@ -26,6 +30,7 @@
     <main>
       <!-- HOME -->
       <section class="page active" id="page-home">
+        <div class="banner" id="updBanner" hidden><span id="updBannerText"></span><button class="btn primary sm" id="updBannerBtn" data-i18n="set.install"></button></div>
         <div id="pairView" hidden>
           <div class="hero card glow">
             <div class="hero-text">
@@ -70,7 +75,39 @@
             <button class="action" id="actFiles"><svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg><b data-i18n="act.files"></b><span data-i18n="act.filesSub"></span></button>
             <button class="action" id="actClip"><svg viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg><b data-i18n="act.clip"></b><span data-i18n="act.clipSub"></span></button>
             <button class="action" id="actRing"><svg viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/><path d="M3 8v8M21 8v8"/></svg><b id="ringLabel"></b><span data-i18n="act.ringSub"></span></button>
-            <button class="action" id="actNotifs"><svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/></svg><b data-i18n="act.notifs"></b><span id="notifCount"></span></button>
+            <button class="action" id="actMirror"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg><b data-i18n="act.mirror"></b><span data-i18n="act.mirrorSub"></span></button>
+          </div>
+
+
+          <div class="duo">
+            <div class="card media" id="mediaCard">
+              <div class="media-empty muted" id="mediaEmpty" data-i18n="media.none"></div>
+              <div class="media-body" id="mediaBody" hidden>
+                <div class="art" id="mediaArt"></div>
+                <div class="media-info">
+                  <div class="muted small" id="mediaApp"></div>
+                  <div class="m-title" id="mediaTitle" dir="auto"></div>
+                  <div class="muted" id="mediaArtist" dir="auto"></div>
+                  <div class="seek" id="mediaSeek"><i id="mediaBar"></i></div>
+                  <div class="m-times muted small"><span id="mediaPos"></span><span id="mediaDur"></span></div>
+                  <div class="m-ctrls">
+                    <button class="round" id="mPrev" title="Previous"><svg viewBox="0 0 24 24"><path d="M19 20 9 12l10-8zM5 19V5"/></svg></button>
+                    <button class="round big" id="mToggle"><svg viewBox="0 0 24 24" id="mToggleIcon"><path d="M7 4l13 8-13 8z"/></svg></button>
+                    <button class="round" id="mNext" title="Next"><svg viewBox="0 0 24 24"><path d="M5 4l10 8-10 8zM19 5v14"/></svg></button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="card controls">
+              <div class="tiles">
+                <button class="tile" id="tDnd"><svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg><span data-i18n="ctl.dnd"></span></button>
+                <button class="tile" id="tTorch"><svg viewBox="0 0 24 24"><path d="M8 2h8l-1 6H9zM9 8h6v13a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1z"/><path d="M12 13v3"/></svg><span data-i18n="ctl.torch"></span></button>
+                <button class="tile" id="tRinger"><svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/></svg><span id="ringerLabel"></span></button>
+                <button class="tile" id="tLock"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span data-i18n="ctl.lock"></span></button>
+              </div>
+              <label class="vol"><span data-i18n="ctl.media"></span><input type="range" id="volMusic" min="0" max="15"></label>
+              <label class="vol"><span data-i18n="ctl.ring"></span><input type="range" id="volRing" min="0" max="7"></label>
+            </div>
           </div>
 
           <div class="card">
@@ -110,6 +147,106 @@
         <div id="transferList" class="transfers"></div>
       </section>
 
+
+      <!-- MESSAGES -->
+      <section class="page" id="page-messages">
+        <div class="page-head">
+          <h2 data-i18n="nav.messages"></h2>
+          <div class="row">
+            <button class="btn ghost" id="smsRefresh" data-i18n="common.refresh"></button>
+            <button class="btn primary" id="smsNew" data-i18n="sms.new"></button>
+          </div>
+        </div>
+        <div class="split">
+          <div class="card list-pane">
+            <input class="search wide" id="smsSearch" type="search" data-i18n-ph="sms.search">
+            <div id="threadList" class="threads"></div>
+          </div>
+          <div class="card convo" id="convo">
+            <div class="convo-head" id="convoHead"></div>
+            <div class="bubbles" id="bubbles"></div>
+            <div class="composer">
+              <input id="smsTo" class="reply-input" list="contactList" data-i18n-ph="sms.to" hidden>
+              <textarea id="smsBody" rows="1" data-i18n-ph="sms.write" dir="auto"></textarea>
+              <button class="btn primary" id="smsSendBtn" data-i18n="notif.send"></button>
+            </div>
+          </div>
+        </div>
+        <datalist id="contactList"></datalist>
+        <div class="card notice" id="smsPerm" hidden><b data-i18n="perm.sms"></b><span class="muted" data-i18n="perm.onPhone"></span></div>
+      </section>
+
+      <!-- CALLS -->
+      <section class="page" id="page-calls">
+        <div class="page-head"><h2 data-i18n="nav.calls"></h2>
+          <button class="btn ghost" id="callsRefresh" data-i18n="common.refresh"></button></div>
+        <div class="card dialer">
+          <input id="dialNumber" class="search wide mono" list="contactList" data-i18n-ph="calls.number">
+          <button class="btn primary" id="dialBtn" data-i18n="calls.call"></button>
+          <button class="btn ghost" id="dialSms" data-i18n="calls.sms"></button>
+        </div>
+        <div class="card active-call" id="activeCall" hidden>
+          <div><div class="muted small" id="acLabel"></div><b id="acName"></b></div>
+          <div class="row"><button class="btn answer" id="acAnswer" data-i18n="calls.answer"></button><button class="btn decline" id="acEnd" data-i18n="calls.end"></button></div>
+        </div>
+        <div class="card"><h3 data-i18n="calls.recent"></h3><div id="callLog" class="calllog"></div></div>
+        <div class="card notice" id="callsPerm" hidden><b data-i18n="perm.calls"></b><span class="muted" data-i18n="perm.onPhone"></span></div>
+      </section>
+
+      <!-- SCREEN -->
+      <section class="page" id="page-screen">
+        <div class="page-head"><h2 data-i18n="nav.screen"></h2></div>
+        <div class="card glow mirror-hero">
+          <div class="mh-text">
+            <h1 data-i18n="mirror.title"></h1>
+            <p class="muted" data-i18n="mirror.lead"></p>
+            <div class="row">
+              <button class="btn primary" id="mirrorStart" data-i18n="mirror.start"></button>
+              <button class="btn ghost" id="mirrorStop" data-i18n="mirror.stop" hidden></button>
+            </div>
+            <p class="small" id="mirrorStatus"></p>
+          </div>
+          <div class="mh-art"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3 data-i18n="mirror.devices"></h3><button class="link" id="mirrorRefresh" data-i18n="common.refresh"></button></div>
+          <div id="adbDevices" class="devices"></div>
+        </div>
+        <div class="card settings">
+          <h3 data-i18n="mirror.wireless"></h3>
+          <p class="muted small" data-i18n="mirror.wirelessLead"></p>
+          <div class="pairform">
+            <input id="pairHost" class="search mono" placeholder="192.168.1.5:37123">
+            <input id="pairCode" class="search mono" data-i18n-ph="mirror.code" maxlength="6">
+            <button class="btn primary" id="pairDo" data-i18n="mirror.pair"></button>
+          </div>
+          <p class="small" id="pairResult"></p>
+        </div>
+        <div class="card settings">
+          <h3 data-i18n="mirror.options"></h3>
+          <div class="set-row"><div><b data-i18n="mirror.quality"></b></div>
+            <div class="seg" data-setting="mirrorQuality"><button data-v="low" data-i18n="mirror.low"></button><button data-v="balanced" data-i18n="mirror.balanced"></button><button data-v="high" data-i18n="mirror.high"></button></div></div>
+          <label class="set-row"><div><b data-i18n="mirror.audio"></b><p class="muted small" data-i18n="mirror.audioSub"></p></div><input type="checkbox" class="switch" data-setting="mirrorAudio"></label>
+        </div>
+        <details class="card help">
+          <summary data-i18n="mirror.howto"></summary>
+          <ol>
+            <li data-i18n="mirror.h1"></li>
+            <li data-i18n="mirror.h2"></li>
+            <li data-i18n="mirror.h3"></li>
+            <li data-i18n="mirror.h4"></li>
+          </ol>
+          <p class="muted small" data-i18n="mirror.keys"></p>
+        </details>
+      </section>
+
+      <!-- CLIPBOARD -->
+      <section class="page" id="page-clipboard">
+        <div class="page-head"><h2 data-i18n="nav.clipboard"></h2>
+          <button class="btn ghost" id="clipClear" data-i18n="clip.clear"></button></div>
+        <div id="clipList" class="clips"></div>
+      </section>
+
       <!-- SETTINGS -->
       <section class="page" id="page-settings">
         <div class="page-head"><h2 data-i18n="nav.settings"></h2></div>
@@ -133,6 +270,23 @@
           <label class="set-row" id="rowStartup"><div><b data-i18n="set.startup"></b></div><input type="checkbox" class="switch" data-setting="startWithSystem"></label>
           <label class="set-row"><div><b data-i18n="set.tray"></b><p class="muted small" data-i18n="set.traySub"></p></div><input type="checkbox" class="switch" data-setting="minimizeToTray"></label>
           <div class="set-row" id="rowUnpair"><div><b data-i18n="set.unpair"></b><p class="muted small" id="pairedWith"></p></div><button class="btn danger" id="unpair" data-i18n="set.unpairBtn"></button></div>
+        </div>
+        <div class="card settings">
+          <h3 data-i18n="set.notifFilter"></h3>
+          <p class="muted small" data-i18n="set.notifFilterSub"></p>
+          <div id="appFilter" class="appfilter"></div>
+          <label class="set-row"><div><b data-i18n="set.quiet"></b><p class="muted small" data-i18n="set.quietSub"></p></div><input type="checkbox" class="switch" data-setting="quietEnabled"></label>
+          <div class="set-row"><div class="row"><span data-i18n="set.from"></span><input type="time" class="time" data-time="quietFrom"><span data-i18n="set.to"></span><input type="time" class="time" data-time="quietTo"></div></div>
+        </div>
+        <div class="card settings">
+          <h3 data-i18n="set.shortcutsTitle"></h3>
+          <label class="set-row"><div><b data-i18n="set.shortcuts"></b><p class="muted small mono-hint" data-i18n="set.shortcutsSub"></p></div><input type="checkbox" class="switch" data-setting="shortcuts"></label>
+          <label class="set-row"><div><b data-i18n="set.clipHistory"></b><p class="muted small" data-i18n="set.clipHistorySub"></p></div><input type="checkbox" class="switch" data-setting="clipHistory"></label>
+        </div>
+        <div class="card settings">
+          <h3 data-i18n="set.updates"></h3>
+          <label class="set-row"><div><b data-i18n="set.autoUpdate"></b></div><input type="checkbox" class="switch" data-setting="autoUpdate"></label>
+          <div class="set-row"><div><b id="updateText"></b><p class="muted small" id="phoneVer"></p></div><div class="row"><button class="btn ghost" id="updCheck" data-i18n="set.check"></button><button class="btn primary" id="updInstall" data-i18n="set.install" hidden></button></div></div>
         </div>
         <div class="card about">
           <img src="../assets/icon.png" alt="">

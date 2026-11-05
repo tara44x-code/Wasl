@@ -88,6 +88,10 @@ class MainActivity : ComponentActivity() {
     private val askPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) {
         resumeTick++
     }
+    private val askMany = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+        resumeTick++
+        PhoneControl.sendSoon(this)
+    }
     private val pickFiles = registerForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris ->
         if (uris.isNotEmpty()) {
             val items = Link.openOutgoing(this, uris)
@@ -100,6 +104,10 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         handleIntent(intent)
         WaslApp.startService(this)
+        if (System.currentTimeMillis() - Link.prefs.lastUpdateCheck > 6 * 3600_000L) {
+            Link.prefs.lastUpdateCheck = System.currentTimeMillis()
+            Thread { Updater.check() }.start()
+        }
         setContent { WaslTheme { Screen() } }
     }
 
@@ -175,6 +183,7 @@ class MainActivity : ComponentActivity() {
                 modifier = Modifier.fillMaxSize(),
             ) {
                 item { Header() }
+                item { UpdateCard() }
                 if (state.status == Status.UNPAIRED) {
                     item { PairCard(state) }
                 } else {
@@ -342,7 +351,10 @@ class MainActivity : ComponentActivity() {
         val postOn = remember(tick) { Build.VERSION.SDK_INT < 33 || granted(Manifest.permission.POST_NOTIFICATIONS) }
         val batteryOn = remember(tick) { getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(packageName) }
         val storageOn = remember(tick) { Build.VERSION.SDK_INT >= 29 || granted(Manifest.permission.WRITE_EXTERNAL_STORAGE) }
-        if (listenerOn && postOn && batteryOn && storageOn) return
+        val callsOn = remember(tick) { Perms.all(ctx, Perms.CALLS) }
+        val smsOn = remember(tick) { Perms.all(ctx, Perms.SMS) }
+        val a11yOn = remember(tick) { WaslAccessibility.isEnabled(ctx) }
+        if (listenerOn && postOn && batteryOn && storageOn && callsOn && smsOn && a11yOn) return
         SectionCard(stringResource(R.string.section_setup)) {
             PermRow(stringResource(R.string.perm_listener), stringResource(R.string.perm_listener_sub), listenerOn) {
                 startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
@@ -358,12 +370,47 @@ class MainActivity : ComponentActivity() {
                     startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
                 }
             }
+            PermRow(stringResource(R.string.perm_calls), stringResource(R.string.perm_calls_sub), callsOn) {
+                askMany.launch(Perms.CALLS)
+            }
+            PermRow(stringResource(R.string.perm_sms), stringResource(R.string.perm_sms_sub), smsOn) {
+                askMany.launch(Perms.SMS)
+            }
+            PermRow(stringResource(R.string.perm_a11y), stringResource(R.string.perm_a11y_sub), a11yOn) {
+                startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+            }
             if (!storageOn) {
                 PermRow(stringResource(R.string.perm_storage), stringResource(R.string.perm_storage_sub), false) {
                     askPermission.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
                 }
             }
         }
+    }
+
+    @Composable
+    private fun UpdateCard() {
+        val st by Updater.state.collectAsState()
+        when (val s = st) {
+            is Updater.State.Available -> SectionCard(stringResource(R.string.update_title, s.info.version)) {
+                Text(stringResource(R.string.update_sub), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                GradientButton(stringResource(R.string.update_now), Modifier.fillMaxWidth()) { startUpdate(s.info) }
+            }
+            is Updater.State.Downloading -> SectionCard(stringResource(R.string.update_downloading)) {
+                LinearProgressIndicator(progress = { s.percent / 100f }, modifier = Modifier.fillMaxWidth())
+            }
+            is Updater.State.Failed -> if (s.why == "checksum mismatch" || s.why == "install") SectionCard {
+                Text(stringResource(R.string.update_failed), color = MaterialTheme.colorScheme.error)
+            }
+            else -> {}
+        }
+    }
+
+    private fun startUpdate(info: Updater.Info) {
+        if (!packageManager.canRequestPackageInstalls()) {
+            startActivity(Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:$packageName")))
+            return
+        }
+        Thread { Updater.install(this, info) }.start()
     }
 
     @Composable
