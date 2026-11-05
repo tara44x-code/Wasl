@@ -358,6 +358,7 @@ object Link {
         }
         files.abortAll()
         Ringer.stop(app, report = false)
+        if (ScreenMirror.running) app.stopService(Intent(app, MirrorService::class.java))
         PhoneControl.detach(app)
         Media.detach()
         if (prefs.pairing != null) update { it.copy(status = Status.SEARCHING) }
@@ -409,6 +410,8 @@ object Link {
             "nav" -> main.post { WaslAccessibility.global(msg.optString("action")) }
             "call.cmd", "call.dial", "calllog.request", "contacts.request" -> Calls.handle(app, msg)
             "sms.threads.request", "sms.thread.request", "sms.send" -> Sms.handle(app, msg)
+            "scr.start", "scr.stop", "scr.key", "scr.gesture" -> ScreenMirror.handle(app, msg)
+            "fs.list", "fs.get" -> PhoneFiles.handle(app, msg)
             "notif.filter" -> {
                 val arr = msg.optJSONArray("muted")
                 val set = HashSet<String>()

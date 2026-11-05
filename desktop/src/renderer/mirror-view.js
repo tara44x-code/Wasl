@@ -22,6 +22,12 @@ const T = (k) => (TIPS[k] ? TIPS[k][ar ? 0 : 1] : k);
 document.querySelectorAll('[data-tip]').forEach((b) => (b.title = T(b.dataset.tip)));
 document.getElementById('waitText').textContent = ar ? 'جارٍ تشغيل العرض…' : 'Starting the mirror…';
 document.documentElement.lang = ar ? 'ar' : 'en';
+const appMode = q.get('mode') === 'app';
+if (appMode) {
+  // Through the phone app there is no rotate, screen-off or audio; keys are limited.
+  ['rotate', 'screenoff', 'mute'].forEach((a) => { const b = document.querySelector(`[data-act="${a}"]`); if (b) b.hidden = true; });
+  document.getElementById('waitText').textContent = ar ? 'وافق على مشاركة الشاشة في الهاتف…' : 'Allow screen sharing on the phone…';
+}
 
 const canvas = document.getElementById('screen');
 const ctx2d = canvas.getContext('2d', { alpha: false, desynchronized: true });

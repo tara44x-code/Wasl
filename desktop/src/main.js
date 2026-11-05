@@ -142,6 +142,7 @@ async function startServer() {
     state.ringing = false;
     transfers.abortAll();
     phone.onDisconnected();
+    if (mirror && mirror.session && mirror.session.app) mirror.stop();
     updateTray();
     push();
   });
@@ -200,6 +201,7 @@ let lastClipFromPhone = null;
 
 function onMessage(msg, bin) {
   if (transfers.handle(msg, bin)) return;
+  if (mirror && mirror.onLink(msg, bin)) return;
   if (phone.handle(msg)) return;
   switch (msg.t) {
     case 'battery':

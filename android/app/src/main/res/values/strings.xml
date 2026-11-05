@@ -76,4 +76,9 @@
     <string name="update_now">Update now</string>
     <string name="update_downloading">Downloading update…</string>
     <string name="update_failed">The update could not be installed. Try again later or download it from GitHub.</string>
+    <string name="mirror_ask_title">Show this screen on your PC?</string>
+    <string name="mirror_ask_body">Tap to allow screen sharing with Wasl on your PC.</string>
+    <string name="mirror_running">Your screen is shown on your PC</string>
+    <string name="perm_files">Phone files on the PC</string>
+    <string name="perm_files_sub">Browse this phone’s storage and download files from the PC.</string>
 </resources>

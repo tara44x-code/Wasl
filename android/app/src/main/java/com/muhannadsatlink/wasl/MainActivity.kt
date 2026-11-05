@@ -354,7 +354,8 @@ class MainActivity : ComponentActivity() {
         val callsOn = remember(tick) { Perms.all(ctx, Perms.CALLS) }
         val smsOn = remember(tick) { Perms.all(ctx, Perms.SMS) }
         val a11yOn = remember(tick) { WaslAccessibility.isEnabled(ctx) }
-        if (listenerOn && postOn && batteryOn && storageOn && callsOn && smsOn && a11yOn) return
+        val filesOn = remember(tick) { PhoneFiles.allowed(ctx) }
+        if (listenerOn && postOn && batteryOn && storageOn && callsOn && smsOn && a11yOn && filesOn) return
         SectionCard(stringResource(R.string.section_setup)) {
             PermRow(stringResource(R.string.perm_listener), stringResource(R.string.perm_listener_sub), listenerOn) {
                 startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
@@ -378,6 +379,17 @@ class MainActivity : ComponentActivity() {
             }
             PermRow(stringResource(R.string.perm_a11y), stringResource(R.string.perm_a11y_sub), a11yOn) {
                 startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+            }
+            PermRow(stringResource(R.string.perm_files), stringResource(R.string.perm_files_sub), filesOn) {
+                if (Build.VERSION.SDK_INT >= 30) {
+                    try {
+                        startActivity(Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION, Uri.parse("package:$packageName")))
+                    } catch (e: Exception) {
+                        startActivity(Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION))
+                    }
+                } else {
+                    askPermission.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
+                }
             }
             if (!storageOn) {
                 PermRow(stringResource(R.string.perm_storage), stringResource(R.string.perm_storage_sub), false) {

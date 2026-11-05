@@ -110,6 +110,7 @@ function render() {
   renderScreen();
   renderClipboard();
   renderUpdate();
+  renderPhoneFs();
 }
 
 function renderPairing() {
@@ -590,9 +591,12 @@ function renderScreen() {
   $('liveBadge').hidden = !m.active;
   $('mirrorStart').hidden = !!m.active;
   $('mirrorStop').hidden = !m.active;
+  $('mirrorApp').hidden = !!m.active || !S.connected;
   $('mirrorStart').disabled = m.status === 'starting';
   let status = '';
   if (m.status === 'starting') status = tr('mirror.s.starting');
+  else if (m.status === 'consent') status = tr('mirror.s.consent');
+  else if (m.status === 'running' && m.active === 'app' && !m.a11y) status = tr('mirror.appNote');
   else if (m.status === 'running' && m.active) status = tr('mirror.s.running');
   else if (m.status === 'error') status = STRINGS.en[`mirror.e.${m.error}`] !== undefined ? tr(`mirror.e.${m.error}`) : tr('mirror.e.other') + m.error;
   $('mirrorStatus').textContent = status;
@@ -611,6 +615,7 @@ function renderScreen() {
 
 $('mirrorStart').onclick = () => wasl.mirrorStart();
 $('mirrorStop').onclick = () => wasl.mirrorStop();
+$('mirrorApp').onclick = () => wasl.mirrorStart('app');
 $('mirrorRefresh').onclick = () => wasl.mirrorRefresh();
 $('pairDo').onclick = async () => {
   const host = $('pairHost').value.trim();
@@ -686,3 +691,49 @@ document.querySelectorAll('.nav').forEach((b) => b.addEventListener('click', () 
   if (b.dataset.page === 'calls') { callsRequested = false; }
   render();
 }));
+
+// ======================================================================
+// Phone files
+// ======================================================================
+
+let pfsRequested = false;
+let pfsPath = '';
+
+function renderPhoneFs() {
+  if (!$('page-files').classList.contains('active')) return;
+  if (S.connected && !pfsRequested) {
+    pfsRequested = true;
+    wasl.fsList(pfsPath);
+  }
+  const fsx = S.phoneFs;
+  $('pfsPath').textContent = `/${tr('pfs.root')}${pfsPath ? `/${pfsPath}` : ''}`;
+  $('pfsUp').disabled = !pfsPath;
+  const list = $('pfsList');
+  if (!S.connected) return list.replaceChildren(el('div', { class: 'empty small' }, el('span', { class: 'muted', text: tr('files.needConn') })));
+  if (fsx && !fsx.allowed) return list.replaceChildren(el('div', { class: 'empty small' }, el('span', { class: 'muted', text: tr('pfs.denied') })));
+  const items = fsx && fsx.path === pfsPath ? fsx.items : null;
+  if (!items) return list.replaceChildren(el('div', { class: 'empty small' }, el('span', { class: 'muted', text: tr('sms.loading') })));
+  if (!items.length) return list.replaceChildren(el('div', { class: 'empty small' }, el('span', { class: 'muted', text: tr('pfs.empty') })));
+  return list.replaceChildren(...items.map((x) => el('div', {
+    class: `pfs-row ${x.dir ? 'dir' : ''}`,
+    ondblclick: () => x.dir && openDir(x.name),
+  },
+  el('span', { class: 'pfs-ico', text: x.dir ? '📁' : '📄' }),
+  el('button', { class: 'pfs-name', dir: 'auto', text: x.name, onclick: () => x.dir && openDir(x.name) }),
+  el('span', { class: 'muted small', text: x.dir ? '' : size(x.size) }),
+  el('span', { class: 'muted small', text: new Date(x.mtime).toLocaleDateString(lang === 'ar' ? 'ar-IQ' : undefined) }),
+  x.dir ? el('span') : el('button', { class: 'pill', text: tr('pfs.get'), onclick: () => { wasl.fsGet([pfsPath ? `${pfsPath}/${x.name}` : x.name]); showToast(tr('notif.sent')); } }))));
+}
+
+function openDir(name) {
+  pfsPath = pfsPath ? `${pfsPath}/${name}` : name;
+  wasl.fsList(pfsPath);
+  renderPhoneFs();
+}
+$('pfsUp').onclick = () => {
+  pfsPath = pfsPath.split('/').slice(0, -1).join('/');
+  wasl.fsList(pfsPath);
+  renderPhoneFs();
+};
+$('pfsRefresh').onclick = () => wasl.fsList(pfsPath);
+document.querySelector('[data-page="files"]').addEventListener('click', () => { pfsRequested = false; renderPhoneFs(); });

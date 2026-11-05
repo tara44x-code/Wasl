@@ -35,5 +35,6 @@ object Perms {
         .put("accessibility", WaslAccessibility.isEnabled(ctx))
         .put("dnd", ctx.getSystemService(NotificationManager::class.java).isNotificationPolicyAccessGranted)
         .put("battery", ctx.getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(ctx.packageName))
+        .put("files", PhoneFiles.allowed(ctx))
         .put("post", Build.VERSION.SDK_INT < 33 || has(ctx, Manifest.permission.POST_NOTIFICATIONS))
 }

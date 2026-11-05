@@ -24,6 +24,7 @@ class Phone {
     s.smsThread = null;
     s.phoneVersion = '';
     s.seenApps = {};
+    s.phoneFs = null;
     this.historyFile = path.join(this.dataDir, 'clipboard-history.json');
     try {
       s.clipHistory = JSON.parse(fs.readFileSync(this.historyFile, 'utf8'));
@@ -93,6 +94,9 @@ class Phone {
         break;
       case 'sms.thread':
         s.smsThread = { thread: msg.thread, address: msg.address, name: msg.name, items: (msg.items || []).slice().reverse() };
+        break;
+      case 'fs.list':
+        s.phoneFs = { path: String(msg.path || ''), allowed: !!msg.allowed, items: Array.isArray(msg.items) ? msg.items : [] };
         break;
       case 'sms.new':
         this.onSms(msg);
@@ -224,6 +228,8 @@ class Phone {
     ipcMain.handle('call.dial', (_e, number) => this.send({ t: 'call.dial', number: String(number) }));
     ipcMain.handle('calllog', () => this.send({ t: 'calllog.request' }));
     ipcMain.handle('contacts', () => this.send({ t: 'contacts.request' }));
+    ipcMain.handle('fs.list', (_e, p) => this.send({ t: 'fs.list', path: String(p || '') }));
+    ipcMain.handle('fs.get', (_e, paths) => this.send({ t: 'fs.get', paths: (Array.isArray(paths) ? paths : []).map(String) }));
     ipcMain.handle('sms.threads', () => this.send({ t: 'sms.threads.request' }));
     ipcMain.handle('sms.open', (_e, thread) => {
       s.smsThread = s.smsThread && s.smsThread.thread === thread ? s.smsThread : { thread, items: [], loading: true };

@@ -488,3 +488,12 @@ input[type="range"] { accent-color: var(--accent-2); width: 100%; }
   .split { grid-template-columns: 1fr; height: auto; }
   .split > .card { max-height: 60vh; }
 }
+
+/* phone files */
+.phonefs { margin-top: 16px; }
+.crumbs { color: var(--muted); font-size: 12.5px; margin-bottom: 8px; }
+.pfs-list { display: flex; flex-direction: column; max-height: 420px; overflow-y: auto; }
+.pfs-row { display: grid; grid-template-columns: 28px 1fr 90px 110px 80px; align-items: center; gap: 10px; padding: 7px 6px; border-radius: 10px; }
+.pfs-row:hover { background: var(--card-2); }
+.pfs-name { border: 0; background: none; text-align: start; padding: 0; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pfs-row.dir .pfs-name { color: var(--link); }

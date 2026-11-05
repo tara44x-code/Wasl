@@ -49,4 +49,6 @@ contextBridge.exposeInMainWorld('wasl', {
   mirrorPair: call('mirror.pair'),
   mirrorConnect: call('mirror.connect'),
   mirrorRefresh: call('mirror.refresh'),
+  fsList: call('fs.list'),
+  fsGet: call('fs.get'),
 });

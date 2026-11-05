@@ -283,13 +283,18 @@ class Mirror {
       this.showWindow();
       return;
     }
-    if (!this.state.mirror.adb) throw new Error('adb-missing');
-    let dev = serial ? this.state.mirror.devices.find((d) => d.serial === serial) : this.pickDevice();
-    if (!dev) {
-      await this.autoConnect();
-      dev = this.pickDevice();
+    if (serial === 'app') return this.startApp();
+    let dev = null;
+    if (this.state.mirror.adb) {
+      dev = serial ? this.state.mirror.devices.find((d) => d.serial === serial) : this.pickDevice();
+      if (!dev) {
+        await this.autoConnect();
+        dev = this.pickDevice();
+      }
     }
     if (!dev) {
+      // No USB/wireless debugging: mirror through the Wasl app instead.
+      if (this.link && this.link.connected) return this.startApp();
       this.setStatus('error', 'no-device');
       return;
     }
@@ -431,6 +436,7 @@ class Mirror {
   input(e) {
     const s = this.session;
     if (!s || !e) return;
+    if (s.app) return this.appInput(e);
     const W = Number(e.w) | 0;
     const H = Number(e.h) | 0;
     switch (e.type) {
@@ -477,6 +483,89 @@ class Mirror {
     }
   }
 
+  // ---- app mode: over the Wasl link, no USB debugging ------------------------
+
+  startApp() {
+    if (!this.link || !this.link.connected) {
+      this.setStatus('error', 'no-device');
+      return;
+    }
+    const q = QUALITY[this.store.settings.mirrorQuality] || QUALITY.balanced;
+    const s = { app: true, serial: 'app', sockets: [], gesture: null };
+    this.session = s;
+    this.state.mirror.active = 'app';
+    this.setStatus('consent');
+    this.link.send({ t: 'scr.start', maxSize: q.maxSize || 2400, bitRate: Math.min(q.bitRate, 12_000_000) }).catch(() => this.stop());
+  }
+
+  /** Messages from the phone app; returns true when handled. */
+  onLink(msg, bin) {
+    if (msg.t === 'scr.state') {
+      const s = this.session;
+      this.state.mirror.a11y = !!msg.a11y;
+      if (msg.state === 'running' && s && s.app) {
+        s.size = { w: Number(msg.w) || 1080, h: Number(msg.h) || 2400 };
+        if (!this.win || this.win.isDestroyed()) this.openWindow(s);
+        this.setStatus('running');
+      } else if (msg.state === 'denied') {
+        this.stop();
+        this.setStatus('error', 'denied');
+      } else if (msg.state === 'stopped' && s && s.app) {
+        this.stop();
+      } else {
+        this.push();
+      }
+      return true;
+    }
+    if (msg.t === 'scr.video') {
+      if (this.win && !this.win.isDestroyed() && bin) {
+        this.win.webContents.send('mirror.video', { config: !!msg.config, key: !!msg.key, pts: Number(msg.pts) || 0, data: new Uint8Array(bin) });
+      }
+      return true;
+    }
+    return false;
+  }
+
+  /** Mouse input in app mode becomes accessibility gestures, sent when the button is released. */
+  appInput(e) {
+    const s = this.session;
+    const send = (m) => this.link.send(m).catch(() => {});
+    switch (e.type) {
+      case 'touch':
+        if (e.action === 'down') s.gesture = { start: Date.now(), points: [[e.x, e.y]], w: e.w, h: e.h };
+        else if (e.action === 'move' && s.gesture) {
+          const last = s.gesture.points[s.gesture.points.length - 1];
+          if (Math.hypot(e.x - last[0], e.y - last[1]) > 6 && s.gesture.points.length < 200) s.gesture.points.push([e.x, e.y]);
+        } else if (e.action === 'up' && s.gesture) {
+          const g = s.gesture;
+          s.gesture = null;
+          g.points.push([e.x, e.y]);
+          const duration = Math.max(40, Math.min(3000, Date.now() - g.start));
+          send({ t: 'scr.gesture', points: g.points, duration, w: g.w, h: g.h });
+        }
+        break;
+      case 'scroll': {
+        const dy = (Number(e.vs) || 0) * e.h * 0.25;
+        const y2 = Math.max(0, Math.min(e.h - 1, e.y + dy));
+        send({ t: 'scr.gesture', points: [[e.x, e.y], [e.x, y2]], duration: 180, w: e.w, h: e.h });
+        break;
+      }
+      case 'back': send({ t: 'nav', action: 'back' }); break;
+      case 'notifications': send({ t: 'nav', action: 'notifications' }); break;
+      case 'press':
+        if (e.keycode === 3) send({ t: 'nav', action: 'home' });
+        else if (e.keycode === 187) send({ t: 'nav', action: 'recents' });
+        else if (e.keycode === 26) send({ t: 'toggle', what: 'lock' });
+        else if (e.keycode === 24 || e.keycode === 25) {
+          const st = this.state.status;
+          if (st) send({ t: 'volume.set', stream: 'music', value: st.volMusic + (e.keycode === 24 ? 1 : -1) });
+        }
+        break;
+      default:
+        break;
+    }
+  }
+
   // ---- window ------------------------------------------------------------
 
   openWindow(s) {
@@ -500,8 +589,11 @@ class Mirror {
         sandbox: true,
       },
     });
+    this.win.webContents.on('did-finish-load', () => {
+      if (s.app && this.link) this.link.send({ t: 'scr.key' }).catch(() => {});
+    });
     this.win.loadFile(path.join(__dirname, 'renderer', 'mirror.html'), {
-      query: { lang: this.store.settings.language, w: String(s.size.w), h: String(s.size.h), name: s.name || s.model || '' },
+      query: { lang: this.store.settings.language, w: String(s.size.w), h: String(s.size.h), name: s.name || s.model || '', mode: s.app ? 'app' : 'adb' },
     });
     this.win.on('closed', () => {
       this.win = null;
@@ -526,6 +618,7 @@ class Mirror {
     this.session = null;
     this.state.mirror.active = null;
     if (this.state.mirror.status !== 'error') this.state.mirror.status = 'idle';
+    if (s && s.app && this.link) this.link.send({ t: 'scr.stop' }).catch(() => {});
     if (s) {
       for (const sock of s.sockets) sock.destroy();
       if (s.proc) s.proc.kill();

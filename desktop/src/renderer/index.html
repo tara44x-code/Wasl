@@ -145,6 +145,12 @@
           <button class="btn primary" id="pickFiles" data-i18n="files.pick"></button>
         </div>
         <div id="transferList" class="transfers"></div>
+        <div class="card phonefs">
+          <div class="card-head"><h3 data-i18n="pfs.title"></h3>
+            <div class="row"><button class="btn ghost sm" id="pfsUp" data-i18n="pfs.up"></button><button class="btn ghost sm" id="pfsRefresh" data-i18n="common.refresh"></button></div></div>
+          <div class="crumbs" id="pfsPath" dir="auto"></div>
+          <div id="pfsList" class="pfs-list"></div>
+        </div>
       </section>
 
 
@@ -202,6 +208,7 @@
             <p class="muted" data-i18n="mirror.lead"></p>
             <div class="row">
               <button class="btn primary" id="mirrorStart" data-i18n="mirror.start"></button>
+              <button class="btn ghost" id="mirrorApp" data-i18n="mirror.viaApp"></button>
               <button class="btn ghost" id="mirrorStop" data-i18n="mirror.stop" hidden></button>
             </div>
             <p class="small" id="mirrorStatus"></p>
