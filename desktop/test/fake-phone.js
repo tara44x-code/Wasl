@@ -8,9 +8,9 @@ const { EventEmitter } = require('events');
 const P = require('../src/protocol');
 
 class FakePhone extends EventEmitter {
-  constructor({ host, port, key, deviceId, name = 'Test Phone' }) {
+  constructor({ host, port, key, deviceId, name = 'Test Phone', pair = false }) {
     super();
-    Object.assign(this, { host, port, key, name });
+    Object.assign(this, { host, port, key, name, pair });
     this.deviceId = deviceId || crypto.randomBytes(16).toString('hex');
   }
 
@@ -25,6 +25,7 @@ class FakePhone extends EventEmitter {
       sock.on('close', () => this.emit('close'));
       sock.on('connect', () => {
         const hello = { t: 'hello', v: 1, dev: this.deviceId, nonce: nonceC.toString('base64') };
+        if (this.pair) hello.pair = true;
         sock.write(P.frame(P.PLAIN, Buffer.from(JSON.stringify(hello))));
       });
       sock.on('data', (d) => {

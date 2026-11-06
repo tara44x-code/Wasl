@@ -81,4 +81,6 @@
     <string name="mirror_running">Your screen is shown on your PC</string>
     <string name="perm_files">Phone files on the PC</string>
     <string name="perm_files_sub">Browse this phone’s storage and download files from the PC.</string>
+    <string name="pair_again">Scan a new pairing code</string>
+    <string name="not_connected_hint">Make sure Wasl is open on the PC and both are on the same Wi-Fi. If the PC was set up again, click “Pair again” on the PC and scan the new code.</string>
 </resources>

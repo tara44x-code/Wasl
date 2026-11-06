@@ -81,4 +81,6 @@
     <string name="mirror_running">شاشتك معروضة على الحاسبة</string>
     <string name="perm_files">ملفات الهاتف على الحاسبة</string>
     <string name="perm_files_sub">تصفّح ملفات الهاتف وتنزيلها من الحاسبة.</string>
+    <string name="pair_again">مسح رمز ربط جديد</string>
+    <string name="not_connected_hint">تأكد أن وصل مفتوح على الحاسبة وأن الجهازين على نفس الواي فاي. إذا أُعيد ربط الحاسبة، اضغط «ربط من جديد» في الحاسبة وامسح الرمز الجديد.</string>
 </resources>

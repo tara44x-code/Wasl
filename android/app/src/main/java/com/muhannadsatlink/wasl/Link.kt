@@ -217,6 +217,7 @@ object Link {
             conn = c
             prefs.lastHost = c.host
             prefs.lastPort = c.port
+            prefs.fresh = false
             onConnected(p)
             try {
                 c.readLoop { msg, bin -> handle(msg, bin) }
@@ -255,6 +256,7 @@ object Link {
                 .put("v", Protocol.VERSION)
                 .put("dev", prefs.deviceId)
                 .put("nonce", Base64.encodeToString(nonceC, Base64.NO_WRAP))
+            if (prefs.fresh) hello.put("pair", true)
             Protocol.writeFrame(out, Protocol.PLAIN, hello.toString().toByteArray(Charsets.UTF_8))
             out.flush()
 

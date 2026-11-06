@@ -207,3 +207,19 @@ test('main-process modules load', () => {
     Module._load = orig;
   }
 });
+
+test('a known phone can pair again with a new key', async () => {
+  const { server, port, devices } = await setup();
+  const key1 = server.beginPairing();
+  const phone = new FakePhone({ host: '127.0.0.1', port, key: key1, pair: true });
+  await phone.connect();
+  phone.close();
+  const key2 = server.beginPairing();
+  const again = new FakePhone({ host: '127.0.0.1', port, key: key2, deviceId: phone.deviceId, pair: true });
+  const paired = once(server, 'paired');
+  await again.connect();
+  await paired;
+  assert.ok(devices.get(phone.deviceId).equals(key2));
+  again.close();
+  await server.stop();
+});

@@ -65,9 +65,12 @@ class Session extends EventEmitter {
       if (msg.t !== 'hello' || msg.v !== P.VERSION) throw new Error('bad hello');
       const nonceC = Buffer.from(String(msg.nonce), 'base64');
       if (nonceC.length !== 16 || !/^[0-9a-f]{16,64}$/.test(String(msg.dev))) throw new Error('bad hello');
-      let key = this.server.keyFor(msg.dev);
+      // A phone that just scanned a QR code says so; it must use the new key
+      // even if this PC still knows it from an earlier pairing.
+      const pending = this.server.pendingKey();
+      let key = msg.pair === true && pending ? null : this.server.keyFor(msg.dev);
       if (!key) {
-        key = this.server.pendingKey();
+        key = pending;
         this.pairing = !!key;
       }
       if (!key) {

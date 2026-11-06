@@ -94,9 +94,11 @@ function render() {
   sc.className = `conn ${status}`;
   sc.querySelector('span').textContent = tr(`conn.${status}`);
 
-  $('pairView').hidden = S.paired;
-  $('deviceView').hidden = !S.paired;
-  if (!S.paired) renderPairing();
+  // While pairing (first time or again), the QR code replaces the device view.
+  const showPair = !S.paired || !!S.pairing;
+  $('pairView').hidden = !showPair;
+  $('deviceView').hidden = showPair;
+  if (showPair) renderPairing();
   else renderDevice();
 
   const n = S.notifications.length;
@@ -116,7 +118,7 @@ function render() {
 function renderPairing() {
   const p = S.pairing;
   const wrap = $('qrWrap');
-  $('pairCancel').hidden = !p;
+  $('pairCancel').hidden = !p && !S.paired;
   $('pairBtn').hidden = !!p;
   if (p) {
     if (wrap.dataset.uri !== p.uri) {
@@ -143,6 +145,8 @@ function renderDevice() {
   cc.textContent = tr(S.connected ? 'conn.on' : 'conn.off');
   cc.className = `chip ${S.connected ? 'ok' : 'warn'}`;
   $('chipModel').textContent = [d.model, d.os].filter(Boolean).join(' · ') || 'Android';
+  $('repairBtn').hidden = S.connected;
+  $('repairHint').hidden = S.connected;
   const b = S.battery;
   const ring = $('batteryRing');
   if (b && S.connected) {
@@ -288,6 +292,7 @@ function renderSettings() {
 
 $('pairBtn').onclick = () => wasl.pairStart();
 $('pairCancel').onclick = () => wasl.pairCancel();
+$('repairBtn').onclick = () => wasl.pairStart();
 $('actFiles').onclick = () => wasl.pickFiles();
 $('actClip').onclick = () => { wasl.sendClipboard(); showToast(tr('notif.sent')); };
 $('actRing').onclick = () => wasl.ring(!S.ringing);

@@ -303,6 +303,10 @@ class MainActivity : ComponentActivity() {
                     )
                 }
             }
+            if (!connected) {
+                Text(stringResource(R.string.not_connected_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                OutlinedButton(onClick = { startScan() }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.pair_again)) }
+            }
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 ActionTile(stringResource(R.string.act_clip), Icons.Filled.Share, connected, Modifier.weight(1f)) { sendClipboard() }
                 ActionTile(stringResource(R.string.act_files), Icons.Filled.Send, connected, Modifier.weight(1f)) { pickFiles.launch("*/*") }

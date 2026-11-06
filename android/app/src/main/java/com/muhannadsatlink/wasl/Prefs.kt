@@ -81,6 +81,7 @@ class Prefs(context: Context) {
                     .putString("hosts", p.hosts.joinToString(","))
                     .putInt("port", p.port)
                     .remove("lastHost")
+                    .putBoolean("fresh", true)
                     .apply()
             }
         }
@@ -88,6 +89,11 @@ class Prefs(context: Context) {
     var lastHost: String?
         get() = sp.getString("lastHost", null)
         set(v) = sp.edit().putString("lastHost", v).apply()
+
+    /** True from scanning a QR code until the first successful connection. */
+    var fresh: Boolean
+        get() = sp.getBoolean("fresh", false)
+        set(v) = sp.edit().putBoolean("fresh", v).apply()
 
     var lastPort: Int
         get() = sp.getInt("lastPort", 0)
