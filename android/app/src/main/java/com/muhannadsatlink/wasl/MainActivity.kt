@@ -361,6 +361,12 @@ class MainActivity : ComponentActivity() {
         val filesOn = remember(tick) { PhoneFiles.allowed(ctx) }
         if (listenerOn && postOn && batteryOn && storageOn && callsOn && smsOn && a11yOn && filesOn) return
         SectionCard(stringResource(R.string.section_setup)) {
+            if (!listenerOn || !a11yOn) {
+                Text(stringResource(R.string.restricted_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                TextButton(onClick = {
+                    startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName")))
+                }) { Text(stringResource(R.string.open_app_info)) }
+            }
             PermRow(stringResource(R.string.perm_listener), stringResource(R.string.perm_listener_sub), listenerOn) {
                 startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
             }

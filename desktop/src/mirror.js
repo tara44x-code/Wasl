@@ -212,7 +212,9 @@ class Mirror {
       this.state.mirror.devices = devices;
       this.state.mirror.adb = true;
       if (before !== JSON.stringify(devices)) this.push();
-      if (this.session && !devices.some((d) => d.serial === this.session.serial && d.state === 'device')) this.stop();
+      // An ADB session ends when its phone disappears; an app-mode session doesn't use ADB at all.
+      const s = this.session;
+      if (s && !s.app && !devices.some((d) => d.serial === s.serial && d.state === 'device')) this.stop();
     } catch {
       // adb missing or busy; try again on the next tick
     }
